@@ -330,20 +330,18 @@ static unsigned int get_bits_slow(seq_string_t *s, int num_bits) {
 }
 
 static unsigned int get_bits_wordwise(seq_string_t *s, int num_bits) {
-	uint32 *int_ptr;
-	uint32 raw;
-	int_ptr = (uint32 *)s->byte_ptr;
+	uint32_t *int_ptr;
+	uint32_t raw;
+	int_ptr = (uint32_t *)s->byte_ptr;
 
-#if 1
-	raw = _byteswap_ulong(*int_ptr) << s->bit_index;
-#else
+
 	raw = (
 		(s->byte_ptr[0] << 24) |
 		(s->byte_ptr[1] << 16) |
 		(s->byte_ptr[2] <<  8) |
 		(s->byte_ptr[3]      )
 	);
-#endif
+	
 	raw >>= 1;
 	raw >>= 31 - num_bits;
 
@@ -387,13 +385,13 @@ static int decode_big_quants(
 		x = got >> 4;
 		if(x > 0) {
 			if(x == 15) {
-				x += get_bits_wordwise(s, linbits);
+				x += get_bits_slow(s, linbits);
 			}
 			x *= 1 - 2 * get_1_bit(s);
 		}
 		if(y > 0) {
 			if(y == 15) {
-				y += get_bits_wordwise(s, linbits);
+				y += get_bits_slow(s, linbits);
 			}
 			y *= 1 - 2 * get_1_bit(s);
 		}

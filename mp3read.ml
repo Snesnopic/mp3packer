@@ -92,7 +92,7 @@ let header_of_ptrref_2 (p : p_type list -> unit) r =
 
 let side_info_of_header_2 : type id chan. (id,chan) header_t -> Ptr.Ref.ref_t -> (id,chan) side_t =
 	function
-	| {header_id = MPEG1; header_channel_mode = Mono} -> (fun side_raw ->
+	| {header_id = MPEG1; header_channel_mode = Mono; _} -> (fun side_raw ->
 		let b = Ptr.Ref.get_bits side_raw in
 		let off = b 0 9 in
 		let g1 = b 18 12 in
@@ -104,7 +104,7 @@ let side_info_of_header_2 : type id chan. (id,chan) header_t -> Ptr.Ref.ref_t ->
 			side_bytes = (g1 + g2 + 7) asr 3;
 		}
 	)
-	| {header_id = MPEG1; header_channel_mode = Stereo _} -> (fun side_raw ->
+	| {header_id = MPEG1; header_channel_mode = Stereo _; _} -> (fun side_raw ->
 		let b = Ptr.Ref.get_bits side_raw in
 		let off = b 0 9 in
 		let g1 = b 20 12 in
@@ -118,7 +118,7 @@ let side_info_of_header_2 : type id chan. (id,chan) header_t -> Ptr.Ref.ref_t ->
 			side_bytes = (g1 + g2 + g3 + g4 + 7) asr 3;
 		}
 	)
-	| {header_id = MPEG2 _; header_channel_mode = Mono} -> (fun side_raw ->
+	| {header_id = MPEG2 _; header_channel_mode = Mono; _} -> (fun side_raw ->
 		let b = Ptr.Ref.get_bits side_raw in
 		let off = b 0 8 in
 		let g1 = b 9 12 in
@@ -129,7 +129,7 @@ let side_info_of_header_2 : type id chan. (id,chan) header_t -> Ptr.Ref.ref_t ->
 			side_bytes = (g1 + 7) asr 3;
 		}
 	)
-	| {header_id = MPEG2 _; header_channel_mode = Stereo _} -> (fun side_raw ->
+	| {header_id = MPEG2 _; header_channel_mode = Stereo _; _} -> (fun side_raw ->
 		let b = Ptr.Ref.get_bits side_raw in
 		let off = b 0 8 in
 		let g1 = b 10 12 in
@@ -170,7 +170,7 @@ class virtual virt_mp3read_2 =
 		method virtual seek : int -> unit
 		method virtual pos : int
 		method virtual length : int
-		method virtual read : string -> int -> int -> unit
+		method virtual read : bytes -> int -> int -> unit
 		method virtual read_ptrref : int -> Ptr.Ref.ref_t
 		method virtual close : unit
 
@@ -193,17 +193,17 @@ class virtual virt_mp3read_2 =
 				false
 			in
 			match reqs with
-			| {req_id            = Req_matches x} when not (List.mem (MPEG_ext header.header_id) x)       -> handle_error "ID"            (Str (string_of_mpeg header.header_id)) string_of_mpeg_ext x
-			| {req_crc           = Req_matches x} when not (List.mem header.header_crc x)                 -> handle_error "CRC"           (Bool header.header_crc               ) string_of_bool     x
-			| {req_bitrate       = Req_matches x} when not (List.mem header.header_bitrate.bitrate_num x) -> handle_error "Bitrate" (Int header.header_bitrate.bitrate_num) string_of_int      x
-			| {req_samplerate    = Req_matches x} when not (List.mem (Samplerate_ext header.header_samplerate) x) -> handle_error "Samplerate" (Int (int_of_samplerate header.header_samplerate)) string_of_samplerate_ext x
-			| {req_padding       = Req_matches x} when not (List.mem header.header_bitrate.bitrate_padding x) -> handle_error "Padding" (Bool header.header_bitrate.bitrate_padding) string_of_bool x
-			| {req_private       = Req_matches x} when not (List.mem header.header_private x)             -> handle_error "Private"       (Bool header.header_private           ) string_of_bool     x
-			| {req_channel_mode  = Req_matches x} when not (List.mem (Channel_ext header.header_channel_mode) x) -> handle_error "Channel mode"  (Str (string_of_channel header.header_channel_mode)) string_of_channel_ext x
-			| {req_channel_count = Req_matches x} when not (List.mem (count_of_channel header.header_channel_mode) x) -> handle_error "Channel count" (Int (count_of_channel header.header_channel_mode)) string_of_int x
-			| {req_copyright     = Req_matches x} when not (List.mem header.header_copyright x)           -> handle_error "Copyright"     (Bool header.header_copyright         ) string_of_bool     x
-			| {req_original      = Req_matches x} when not (List.mem header.header_original x)            -> handle_error "Original"      (Bool header.header_original          ) string_of_bool     x
-			| {req_emphasis      = Req_matches x} when not (List.mem header.header_emphasis x)            -> handle_error "Emphasis"      (Str (string_of_emphasis header.header_emphasis)) string_of_emphasis x
+			| {req_id            = Req_matches x; _} when not (List.mem (MPEG_ext header.header_id) x)       -> handle_error "ID"            (Str (string_of_mpeg header.header_id)) string_of_mpeg_ext x
+			| {req_crc           = Req_matches x; _} when not (List.mem header.header_crc x)                 -> handle_error "CRC"           (Bool header.header_crc               ) string_of_bool     x
+			| {req_bitrate       = Req_matches x; _} when not (List.mem header.header_bitrate.bitrate_num x) -> handle_error "Bitrate" (Int header.header_bitrate.bitrate_num) string_of_int      x
+			| {req_samplerate    = Req_matches x; _} when not (List.mem (Samplerate_ext header.header_samplerate) x) -> handle_error "Samplerate" (Int (int_of_samplerate header.header_samplerate)) string_of_samplerate_ext x
+			| {req_padding       = Req_matches x; _} when not (List.mem header.header_bitrate.bitrate_padding x) -> handle_error "Padding" (Bool header.header_bitrate.bitrate_padding) string_of_bool x
+			| {req_private       = Req_matches x; _} when not (List.mem header.header_private x)             -> handle_error "Private"       (Bool header.header_private           ) string_of_bool     x
+			| {req_channel_mode  = Req_matches x; _} when not (List.mem (Channel_ext header.header_channel_mode) x) -> handle_error "Channel mode"  (Str (string_of_channel header.header_channel_mode)) string_of_channel_ext x
+			| {req_channel_count = Req_matches x; _} when not (List.mem (count_of_channel header.header_channel_mode) x) -> handle_error "Channel count" (Int (count_of_channel header.header_channel_mode)) string_of_int x
+			| {req_copyright     = Req_matches x; _} when not (List.mem header.header_copyright x)           -> handle_error "Copyright"     (Bool header.header_copyright         ) string_of_bool     x
+			| {req_original      = Req_matches x; _} when not (List.mem header.header_original x)            -> handle_error "Original"      (Bool header.header_original          ) string_of_bool     x
+			| {req_emphasis      = Req_matches x; _} when not (List.mem header.header_emphasis x)            -> handle_error "Emphasis"      (Str (string_of_emphasis header.header_emphasis)) string_of_emphasis x
 			| _ -> true
 		)
 
@@ -845,19 +845,19 @@ class virtual virt_mp3read (*?(debug=false)*)(* in_file*) =
 						false
 					in
 					let found_match = match reqs with
-(*						| {req_id           = Req_matches x} when not (List.mem header.header_id x)           -> handle_error "ID"           (Str (string_of_mpeg header.header_id)             ) string_of_mpeg x*)
-						| {req_id           = Req_matches x} when not (List.mem header.header_id x)           -> handle_error "ID"           (Str (string_of_mpeg header.header_id)             ) string_of_mpeg x
-						| {req_crc          = Req_matches x} when not (List.mem header.header_crc x)          -> handle_error "CRC"          (Bool header.header_crc                            ) string_of_bool x
-						| {req_bitrate      = Req_matches x} when not (List.mem header.header_bitrate x)      -> handle_error "Bitrate"      (Int header.header_bitrate                         ) string_of_int  x
-						| {req_samplerate   = Req_matches x} when not (List.mem header.header_samplerate x)   -> handle_error "Samplerate"   (Int (int_of_samplerate header.header_samplerate)  ) (fun n -> string_of_int @@ int_of_samplerate n) x
-						| {req_padding      = Req_matches x} when not (List.mem header.header_padding x)      -> handle_error "Padding"      (Bool header.header_padding                        ) string_of_bool x
-						| {req_private      = Req_matches x} when not (List.mem header.header_private x)      -> handle_error "Private"      (Bool header.header_private                        ) string_of_bool x
-						| {req_channel_mode = Req_matches x} when not (List.mem header.header_channel_mode x) -> handle_error "Channel mode" (Str (string_of_channel header.header_channel_mode)) string_of_channel x
-						| {req_ms           = Req_matches x} when not (List.mem header.header_ms x)           -> handle_error "MS"           (Bool header.header_ms                             ) string_of_bool x
-						| {req_is           = Req_matches x} when not (List.mem header.header_is x)           -> handle_error "IS"           (Bool header.header_is                             ) string_of_bool x
-						| {req_copyright    = Req_matches x} when not (List.mem header.header_copyright x)    -> handle_error "Copyright"    (Bool header.header_copyright                      ) string_of_bool x
-						| {req_original     = Req_matches x} when not (List.mem header.header_original x)     -> handle_error "Original"     (Bool header.header_original                       ) string_of_bool x
-						| {req_emphasis     = Req_matches x} when not (List.mem header.header_emphasis x)     -> handle_error "Emphasis"     (Str (string_of_emphasis header.header_emphasis)   ) string_of_emphasis x
+(*						| {req_id           = Req_matches x; _} when not (List.mem header.header_id x)           -> handle_error "ID"           (Str (string_of_mpeg header.header_id)             ) string_of_mpeg x*)
+						| {req_id           = Req_matches x; _} when not (List.mem header.header_id x)           -> handle_error "ID"           (Str (string_of_mpeg header.header_id)             ) string_of_mpeg x
+						| {req_crc          = Req_matches x; _} when not (List.mem header.header_crc x)          -> handle_error "CRC"          (Bool header.header_crc                            ) string_of_bool x
+						| {req_bitrate      = Req_matches x; _} when not (List.mem header.header_bitrate x)      -> handle_error "Bitrate"      (Int header.header_bitrate                         ) string_of_int  x
+						| {req_samplerate   = Req_matches x; _} when not (List.mem header.header_samplerate x)   -> handle_error "Samplerate"   (Int (int_of_samplerate header.header_samplerate)  ) (fun n -> string_of_int @@ int_of_samplerate n) x
+						| {req_padding      = Req_matches x; _} when not (List.mem header.header_padding x)      -> handle_error "Padding"      (Bool header.header_padding                        ) string_of_bool x
+						| {req_private      = Req_matches x; _} when not (List.mem header.header_private x)      -> handle_error "Private"      (Bool header.header_private                        ) string_of_bool x
+						| {req_channel_mode = Req_matches x; _} when not (List.mem header.header_channel_mode x) -> handle_error "Channel mode" (Str (string_of_channel header.header_channel_mode)) string_of_channel x
+						| {req_ms           = Req_matches x; _} when not (List.mem header.header_ms x)           -> handle_error "MS"           (Bool header.header_ms                             ) string_of_bool x
+						| {req_is           = Req_matches x; _} when not (List.mem header.header_is x)           -> handle_error "IS"           (Bool header.header_is                             ) string_of_bool x
+						| {req_copyright    = Req_matches x; _} when not (List.mem header.header_copyright x)    -> handle_error "Copyright"    (Bool header.header_copyright                      ) string_of_bool x
+						| {req_original     = Req_matches x; _} when not (List.mem header.header_original x)     -> handle_error "Original"     (Bool header.header_original                       ) string_of_bool x
+						| {req_emphasis     = Req_matches x; _} when not (List.mem header.header_emphasis x)     -> handle_error "Emphasis"     (Str (string_of_emphasis header.header_emphasis)   ) string_of_emphasis x
 						| _ -> true
 					in
 

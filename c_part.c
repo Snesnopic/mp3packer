@@ -17,6 +17,7 @@
 #include <windows.h>
 #else
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #endif
 
@@ -186,7 +187,7 @@ CAMLprim value get_os_thread_self_id() {
 		out_val = win_alloc_handle(dup_handle);
 	}
 #else
-	out_val = Val_int(gettid());
+	out_val = Val_int(0); /* gettid() non è disponibile su macOS */
 #endif
 	CAMLreturn(out_val);
 }
@@ -244,7 +245,7 @@ CAMLprim value copy_file_times(value in_h_val, value out_h_val) {
 
 /*
 void p_stuff(int a, int b) {
-	int64 c = (int64)a * (int64)b;
+	int64_t c = (int64_t)a * (int64_t)b;
 	printf("%lld\n", c);
 }
 */

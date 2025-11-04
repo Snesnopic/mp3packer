@@ -4,13 +4,13 @@ type t;;
 
 external make : int -> int -> t = "ptr_make";;
 
-external length : t -> int = "ptr_length" "noalloc";;
-external align : t -> int = "ptr_align" "noalloc";;
+external length : t -> int = "ptr_length" [@@noalloc];;
+external align : t -> int = "ptr_align" [@@noalloc];;
 
 
 (* VirtualAlloc things *)
 (* Only for Windows! *)
-external get_page_size : unit -> int = "ptr_get_page_size" "noalloc";;
+external get_page_size : unit -> int = "ptr_get_page_size" [@@noalloc];;
 let page_size = get_page_size ();;
 external make_virtual_alloc_unsafe : int -> int -> t = "ptr_make_virtual_alloc";;
 let make_page x = make_virtual_alloc_unsafe page_size x;;
@@ -19,7 +19,7 @@ let make_page x = make_virtual_alloc_unsafe page_size x;;
 (* BLIT *)
 (********)
 
-external clear : t -> unit = "ptr_clear" "noalloc";;
+external clear : t -> unit = "ptr_clear" [@@noalloc];;
 
 (* Good for doing "let x = Ptr.clearret (Ptr.make a b)" *)
 let clearret x =
@@ -27,7 +27,7 @@ let clearret x =
 	x
 ;;
 
-external blit_unsafe : t -> int -> t -> int -> int -> unit = "ptr_blit" "noalloc";;
+external blit_unsafe : t -> int -> t -> int -> int -> unit = "ptr_blit" [@@noalloc];;
 let blit pfrom fromoff pto tooff len =
 	if fromoff < 0 || fromoff + len > length pfrom || tooff < 0 || tooff + len > length pto || len < 0 then (
 		invalid_arg "Ptr.blit"
@@ -36,7 +36,7 @@ let blit pfrom fromoff pto tooff len =
 	)
 ;;
 
-external blit_from_string_unsafe : string -> int -> t -> int -> int -> unit = "ptr_blit_from_string" "noalloc";;
+external blit_from_string_unsafe : string -> int -> t -> int -> int -> unit = "ptr_blit_from_string" [@@noalloc];;
 let blit_from_string s soff p poff len =
 	if soff < 0 || soff + len > String.length s || poff < 0 || poff + len > length p || len < 0 then (
 		invalid_arg "Ptr.blit_from_string"
@@ -45,9 +45,9 @@ let blit_from_string s soff p poff len =
 	)
 ;;
 
-external blit_to_string_unsafe : t -> int -> string -> int -> int -> unit = "ptr_blit_to_string";;
-let blit_to_string p poff s soff len =
-	if soff < 0 || soff + len > String.length s || poff < 0 || poff + len > length p || len < 0 then (
+external blit_to_string_unsafe : t -> int -> bytes -> int -> int -> unit = "ptr_blit_to_string";;
+let blit_to_string p poff (s: bytes) soff len =
+	if soff < 0 || soff + len > Bytes.length s || poff < 0 || poff + len > length p || len < 0 then (
 		invalid_arg "Ptr.blit_to_string"
 	) else (
 		blit_to_string_unsafe p poff s soff len
@@ -82,18 +82,19 @@ let of_string s =
 	p
 ;;
 let sub_to_string pin off len =
-	if off < 0 || off + len > length pin then (
+	if off < 0 ||
+off + len > length pin then (
 		invalid_arg "Ptr.sub_to_string"
 	) else (
-		let sout = String.create len in
+		let sout = Bytes.create len in
 		blit_to_string_unsafe pin off sout 0 len;
-		sout
+		Bytes.to_string sout
 	)
 ;;
 let to_string p =
-	let s = String.create (length p) in
+	let s = Bytes.create (length p) in
 	blit_to_string_unsafe p 0 s 0 (length p);
-	s
+	Bytes.to_string s
 ;;
 
 
@@ -110,13 +111,13 @@ let put_this name len f ptr off num =
 	)
 ;;
 
-external put_8_of_int_unsafe    : t -> int -> int   -> unit = "ptr_put_8_of_int" "noalloc";;
-external put_16_of_int_unsafe   : t -> int -> int   -> unit = "ptr_put_16_of_int" "noalloc";;
-external put_32_of_int_unsafe   : t -> int -> int   -> unit = "ptr_put_32_of_int" "noalloc";;
-external put_64_of_int_unsafe   : t -> int -> int   -> unit = "ptr_put_64_of_int" "noalloc";;
-external put_64_of_int64_unsafe : t -> int -> int64 -> unit = "ptr_put_64_of_int64" "noalloc";;
-external put_32_of_float_unsafe : t -> int -> float -> unit = "ptr_put_32_of_float" "noalloc";;
-external put_64_of_float_unsafe : t -> int -> float -> unit = "ptr_put_64_of_float" "noalloc";;
+external put_8_of_int_unsafe    : t -> int -> int   -> unit = "ptr_put_8_of_int" [@@noalloc];;
+external put_16_of_int_unsafe   : t -> int -> int   -> unit = "ptr_put_16_of_int" [@@noalloc];;
+external put_32_of_int_unsafe   : t -> int -> int   -> unit = "ptr_put_32_of_int" [@@noalloc];;
+external put_64_of_int_unsafe   : t -> int -> int   -> unit = "ptr_put_64_of_int" [@@noalloc];;
+external put_64_of_int64_unsafe : t -> int -> int64 -> unit = "ptr_put_64_of_int64" [@@noalloc];;
+external put_32_of_float_unsafe : t -> int -> float -> unit = "ptr_put_32_of_float" [@@noalloc];;
+external put_64_of_float_unsafe : t -> int -> float -> unit = "ptr_put_64_of_float" [@@noalloc];;
 
 let put_8_of_int    = put_this "Ptr.put_8_of_int"    1 put_8_of_int_unsafe;;
 let put_16_of_int   = put_this "Ptr.put_16_of_int"   2 put_16_of_int_unsafe;;
@@ -137,14 +138,14 @@ let get_this name len f ptr off =
 ;;
 
 (* "u" is unsigned *)
-external get_int_of_8_unsafe    : t -> int -> int   = "ptr_get_int_of_8" "noalloc";;
-external get_int_of_8u_unsafe   : t -> int -> int   = "ptr_get_int_of_8u" "noalloc";;
-external get_int_of_16_unsafe   : t -> int -> int   = "ptr_get_int_of_16" "noalloc";;
-external get_int_of_16u_unsafe  : t -> int -> int   = "ptr_get_int_of_16u" "noalloc";;
-external get_int_of_32_unsafe   : t -> int -> int   = "ptr_get_int_of_32" "noalloc";;
-external get_int_of_32u_unsafe  : t -> int -> int   = "ptr_get_int_of_32u" "noalloc";;
-external get_int_of_64_unsafe   : t -> int -> int   = "ptr_get_int_of_64" "noalloc";;
-external get_int_of_64u_unsafe  : t -> int -> int   = "ptr_get_int_of_64u" "noalloc";;
+external get_int_of_8_unsafe    : t -> int -> int   = "ptr_get_int_of_8" [@@noalloc];;
+external get_int_of_8u_unsafe   : t -> int -> int   = "ptr_get_int_of_8u" [@@noalloc];;
+external get_int_of_16_unsafe   : t -> int -> int   = "ptr_get_int_of_16" [@@noalloc];;
+external get_int_of_16u_unsafe  : t -> int -> int   = "ptr_get_int_of_16u" [@@noalloc];;
+external get_int_of_32_unsafe   : t -> int -> int   = "ptr_get_int_of_32" [@@noalloc];;
+external get_int_of_32u_unsafe  : t -> int -> int   = "ptr_get_int_of_32u" [@@noalloc];;
+external get_int_of_64_unsafe   : t -> int -> int   = "ptr_get_int_of_64" [@@noalloc];;
+external get_int_of_64u_unsafe  : t -> int -> int   = "ptr_get_int_of_64u" [@@noalloc];;
 external get_int64_of_64_unsafe : t -> int -> int64 = "ptr_get_int64_of_64";;
 external get_float_of_32_unsafe : t -> int -> float = "ptr_get_float_of_32";;
 external get_float_of_64_unsafe : t -> int -> float = "ptr_get_float_of_64";;
@@ -164,14 +165,14 @@ let get_byte = get_int_of_8u;;
 
 
 (* Byte swap functions *)
-external put_16_of_int_bswap_unsafe : t -> int -> int -> unit = "ptr_put_16_of_int_bswap" "noalloc";;
-external put_32_of_int_bswap_unsafe : t -> int -> int -> unit = "ptr_put_32_of_int_bswap" "noalloc";;
-external put_32_of_float_bswap_unsafe : t -> int -> float -> unit = "ptr_put_32_of_float_bswap" "noalloc";;
+external put_16_of_int_bswap_unsafe : t -> int -> int -> unit = "ptr_put_16_of_int_bswap" [@@noalloc];;
+external put_32_of_int_bswap_unsafe : t -> int -> int -> unit = "ptr_put_32_of_int_bswap" [@@noalloc];;
+external put_32_of_float_bswap_unsafe : t -> int -> float -> unit = "ptr_put_32_of_float_bswap" [@@noalloc];;
 let put_16_of_int_bswap = put_this "Ptr.put_16_of_int_bswap" 2 put_16_of_int_bswap_unsafe;;
 let put_32_of_int_bswap = put_this "Ptr.put_32_of_int_bswap" 4 put_32_of_int_bswap_unsafe;;
 let put_32_of_float_bswap = put_this "Ptr.put_32_of_float_bswap" 4 put_32_of_float_bswap_unsafe;;
 
-external get_int_of_32u_bswap_unsafe : t -> int -> int = "ptr_get_int_of_32u_bswap" "noalloc";;
+external get_int_of_32u_bswap_unsafe : t -> int -> int = "ptr_get_int_of_32u_bswap" [@@noalloc];;
 let get_int_of_32u_bswap = get_this "Ptr.get_int_of_32u_bswap" 4 get_int_of_32u_bswap_unsafe;;
 
 
@@ -394,13 +395,13 @@ let really_write fh ?(pos=(-1)) ptr off len =
 let to_HEX =
 	let x = [|'0';'1';'2';'3';'4';'5';'6';'7';'8';'9';'A';'B';'C';'D';'E';'F'|] in
 	fun p -> (
-		let s = String.create (length p * 2) in
+		let s = Bytes.create (length p * 2) in
 		for pi = 0 to length p - 1 do
 			let c = get_int_of_8u p pi in
-			s.[2 * pi + 0] <- x.(c lsr 4);
-			s.[2 * pi + 1] <- x.(c land 0xF);
+			Bytes.set s (2 * pi + 0) x.(c lsr 4);
+			Bytes.set s (2 * pi + 1) x.(c land 0xF);
 		done;
-		s
+		Bytes.to_string s
 	)
 ;;
 
@@ -451,11 +452,11 @@ module Ref =
 		};;
 		let append_list rs =
 			let rec flatten = function
-				| {n = n} :: tl -> list_append_list n (flatten tl)
+				| {n = n; _} :: tl -> list_append_list n (flatten tl)
 				| [] -> []
 			in
 			{
-				lentot = List.fold_left (fun so_far {lentot = l} -> so_far + l) 0 rs;
+				lentot = List.fold_left (fun so_far {lentot = l; _} -> so_far + l) 0 rs;
 				n = flatten rs;
 			}
 		;;
@@ -467,9 +468,9 @@ module Ref =
 				compare r1.lentot r2.lentot
 			) else (
 				let rec iter_byte i1 i2 = function
-					| ({len = l1} :: tl1, h2) when i1 >= l1 -> iter_byte (i1 - l1) i2 (tl1, h2)
-					| (h1, {len = l2} :: tl2) when i2 >= l2 -> iter_byte i1 (i2 - l2) (h1, tl2)
-					| ({p = p1; off = o1} :: _, {p = p2; off = o2} :: _) as tup -> (
+					| ({len = l1; _} :: tl1, h2) when i1 >= l1 -> iter_byte (i1 - l1) i2 (tl1, h2)
+					| (h1, {len = l2; _} :: tl2) when i2 >= l2 -> iter_byte i1 (i2 - l2) (h1, tl2)
+					| ({p = p1; off = o1; _} :: _, {p = p2; off = o2; _} :: _) as tup -> (
 						let a = get_int_of_8u p1 (o1 + i1) in
 						let b = get_int_of_8u p2 (o2 + i2) in
 						if a = b then (
@@ -543,7 +544,7 @@ module Ref =
 					let use_len = from_len - o_now in
 					mknode from_p use_off use_len :: tl
 				)
-				| {len = from_len} :: tl -> keep_subbing (o_now - from_len) tl
+				| {len = from_len; _} :: tl -> keep_subbing (o_now - from_len) tl
 				| [] -> [] (* Hmm... *)
 			in
 			{
@@ -562,7 +563,7 @@ module Ref =
 		let sub_unsafe r o l =
 			let rec keep_subbing o_now l_now = function
 				| _ when l_now <= 0 -> []
-				| ({len = from_len} as hd) :: tl when o_now = 0 && l_now >= from_len -> (
+				| ({len = from_len; _} as hd) :: tl when o_now = 0 && l_now >= from_len -> (
 					hd :: keep_subbing 0 (l_now - from_len) tl
 				)
 				| {p = from_p; off = from_ptr_off; len = from_len} :: tl when o_now < from_len -> (
@@ -570,7 +571,7 @@ module Ref =
 					let use_len = min (from_len - o_now) l_now in
 					mknode from_p use_off use_len :: keep_subbing 0 (l_now - use_len) tl
 				)
-				| {len = from_len} :: tl -> keep_subbing (o_now - from_len) l_now tl
+				| {len = from_len; _} :: tl -> keep_subbing (o_now - from_len) l_now tl
 				| [] -> [] (* Huh? *)
 			in
 			{
@@ -621,7 +622,7 @@ module Ref =
 					blit_unsafe from_p from_off p to_off_left use_len;
 					blit_list_to_ptr 0 (to_off_left + use_len) (len_left - use_len) tl
 				)
-				| {len = from_len} :: tl -> blit_list_to_ptr (from_off_left - from_len) to_off_left len_left tl
+				| {len = from_len; _} :: tl -> blit_list_to_ptr (from_off_left - from_len) to_off_left len_left tl
 			in
 			blit_list_to_ptr ro po l r.n
 		;;
@@ -652,7 +653,7 @@ module Ref =
 					ignore (write_unsafe fh from_p use_off use_len true pos_now);
 					keep_writing_at 0 (l_now - use_len) (pos_now + use_len)	tl
 				)
-				| {len = from_len} :: tl -> keep_writing_at (o_now - from_len) l_now pos_now tl
+				| {len = from_len; _} :: tl -> keep_writing_at (o_now - from_len) l_now pos_now tl
 			in
 			(* No matter what is added to min_int, the pos will always be < 0 since min_int + max_int = -1 *)
 			keep_writing_at o l (if pos < 0 then min_int else pos) r.n
@@ -680,7 +681,7 @@ module Ref =
 					let next = (num_so_far lsl read_bits) lor (get_bits ~byte_off:from_ptr_off from_p (((*from_ptr_off*)0 lsl 3) + start_bit_now) read_bits) in
 					keep_going next (bits_left - read_bits) 0 0 tl
 				)
-				| {len = from_len} :: tl -> keep_going num_so_far bits_left (start_byte_now - from_len) (start_bit_now - (from_len lsl 3)) tl
+				| {len = from_len; _} :: tl -> keep_going num_so_far bits_left (start_byte_now - from_len) (start_bit_now - (from_len lsl 3)) tl
 				| [] -> (num_so_far lsl bits_left) (* Let's make this overflow with 0s at the end of everything *)
 			in
 			keep_going 0 l start_byte o r.n
@@ -750,7 +751,7 @@ module Ref =
 					(* We can use unsafe if the ref has been made with the functions here, rather than directly *)
 					get_int_of_8u_unsafe from_p (from_ptr_off + off_left)
 				)
-				| {len = from_len} :: tl -> get_byte_list (off_left - from_len) tl
+				| {len = from_len; _} :: tl -> get_byte_list (off_left - from_len) tl
 				| [] -> 0
 			in
 			if o >= 0 then (
@@ -798,21 +799,14 @@ module Ref =
 
 		let to_HEX =
 			let x = [|'0';'1';'2';'3';'4';'5';'6';'7';'8';'9';'A';'B';'C';'D';'E';'F'|] in
-			fun r -> (
-				let s = String.create (r.lentot * 2) in
-				let rec keep_listing outpos = function
-					| [] -> ()
-					| {p = from_p; off = from_off; len = from_len} :: tl -> (
-						for off_add = 0 to from_len - 1 do
-							let c = get_byte from_p (from_off + off_add) in
-							s.[outpos + 2 * off_add + 0] <- x.(c lsr 4);
-							s.[outpos + 2 * off_add + 1] <- x.(c land 0xF);
-						done;
-						keep_listing (outpos + 2 * from_len) tl
-					)
-				in
-				keep_listing 0 r.n;
-				s
+			fun p -> (
+				let s = Bytes.create (length p * 2) in
+				for pi = 0 to length p - 1 do
+					let c = get_int_of_8u p pi in
+					Bytes.set s (2 * pi + 0) x.(c lsr 4);
+					Bytes.set s (2 * pi + 1) x.(c land 0xF);
+				done;
+				Bytes.to_string s
 			)
 		;;
 
