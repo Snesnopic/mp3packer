@@ -1,0 +1,92 @@
+name: Build mp3packer
+
+on:
+  push:
+    branches:
+      - "main"
+      - "fix/**"
+  pull_request:
+
+jobs:
+  build-standard:
+    name: Build (${{ matrix.id }})
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: ubuntu-x86_64
+            os: ubuntu-latest
+            arch: x86_64
+          - id: ubuntu-arm64
+            os: ubuntu-latest-arm64
+            arch: arm64
+          - id: windows-x86_64
+            os: windows-latest
+            arch: x86_64
+          - id: windows-arm64
+            os: windows-latest-arm64
+            arch: arm64
+          - id: macos-x86_64
+            os: macos-15-intel
+            arch: x86_64
+          - id: macos-26
+            os: macos-latest
+            arch: arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up OCaml
+        uses: ocaml/setup-ocaml@v2
+        with:
+          ocaml-compiler: '4.14.x'
+
+      - name: Install dependencies
+        run: opam install dune str
+
+      - name: Build executable
+        run: dune build ./mp3packer.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mp3packer-${{ matrix.id }}
+          path: _build/default/mp3packer.exe
+
+  build-freebsd:
+    name: Build (freebsd-${{ matrix.arch }})
+    runs-on: ubuntu-latest
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run FreeBSD VM and Build
+        uses: vmactions/freebsd-vm@v1
+        with:
+          arch: ${{ matrix.arch }}
+          usesh: true
+          run: |
+            pkg install -y ocaml-ocamfind opam
+            
+            opam init -a --compiler=ocaml-base-compiler.4.14.2
+            eval $(opam env)
+            
+            opam install dune str
+            
+            dune build ./mp3packer.exe
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mp3packer-freebsd-${{ matrix.arch }}
+          path: _build/default/mp3packer.exe
