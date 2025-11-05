@@ -30,17 +30,9 @@ jobs:
         ocaml-compiler: ${{ matrix.ocaml-version }}
         dune-cache: true
       
-    - name: Install dependencies and Build (Windows)
-      if: runner.os == 'Windows'
+    - name: Install dependencies and Build
       run: |
-        opam install dune
-        $env:CFLAGS = "-mssse3"
-        opam exec -- dune build
-
-    - name: Install dependencies and Build (Unix)
-      if: runner.os != 'Windows'
-      run: |
-        opam install dune
+        opam install dune dune-configurator
         opam exec -- dune build
         
     - name: Upload executable artifact
