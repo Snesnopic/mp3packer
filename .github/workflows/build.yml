@@ -36,7 +36,7 @@ jobs:
         opam install . --deps-only --with-test
 
     - name: Build project
-      run: dune build
+      run: opam exec -- dune build
 
     - name: Upload executable artifact
       uses: actions/upload-artifact@v4
