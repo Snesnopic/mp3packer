@@ -28,15 +28,13 @@
    mp3frameutils-c)
 
 (flags
-   (select
-    (-> (:standard))
-    
-    (when
-     (or
-      (= %{ocaml_config:architecture} "x86_64")
-      (= %{ocaml_config:architecture} "amd64")
-      (= %{ocaml_config:architecture} "i686"))
-     (:standard -mssse3 -msse4.1))))
+   :standard
+   (-> %{ocaml_config:architecture}
+     (x86_64 -mssse3 -msse4.1)
+     (amd64 -mssse3 -msse4.1)
+     (i686 -mssse3 -msse4.1)
+     (otherwise)))
+ 
   )
 
 (flags (:standard -w -9-33-35-50-8-27-21)))
