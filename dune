@@ -26,6 +26,13 @@
    unicode-c
    mp3framehuffman-c
    mp3frameutils-c)
-   (flags (:standard -mssse3 -msse4.1))
+   (flags
+   (:standard
+    (-> %{arch}
+      ; Se l'architettura è x86 o x86_64, aggiungi i flag
+      (x86_64 -mssse3 -msse4.1)
+      (x86 -mssse3 -msse4.1)
+      ; Altrimenti (es. 'arm64'), non aggiungere nulla
+      (otherwise))))
 )
 (flags (:standard -w -9-33-35-50-8-27-21)))
