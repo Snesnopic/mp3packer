@@ -27,21 +27,17 @@
    mp3framehuffman-c
    mp3frameutils-c)
 
-  (flags
-   (:standard -mssse3 -msse4.1)
-   (enabled_if
-    (or
-     (= %{ocaml_config:architecture} "x86_64")
-     (= %{ocaml_config:architecture} "amd64")
-     (= %{ocaml_config:architecture} "i686"))))
-  
-  (flags
-   (:standard)
-   (enabled_if
-    (and
-     (<> %{ocaml_config:architecture} "x86_64")
-     (<> %{ocaml_config:architecture} "amd64")
-     (<> %{ocaml_config:architecture} "i686"))))
+(flags
+   (:standard
+    (select
+     (->) 
+     (when
+      (or
+       (= %{ocaml_config:architecture} "x86_64")
+       (= %{ocaml_config:architecture} "amd64")
+       (= %{ocaml_config:architecture} "i686"))
+      (-mssse3 -msse4.1))))
+  )
   )
 
 (flags (:standard -w -9-33-35-50-8-27-21)))
