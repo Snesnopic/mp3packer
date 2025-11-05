@@ -81,7 +81,7 @@ jobs:
             eval $(opam env)
             
             opam install -y dune-configurator
-            
+            rm -rf ~/work/mp3packer/_build
             opam exec -- dune build --root ~/work/mp3packer mp3packer.exe
             
             cp ~/work/mp3packer/_build/default/mp3packer.exe ~/work/mp3packer-freebsd-x64
@@ -113,9 +113,9 @@ jobs:
             eval $(opam env)
             
             opam install -y dune-configurator
-            
+            rm -rf ~/work/mp3packer/_build
             opam exec -- dune build --root ~/work/mp3packer mp3packer.exe
-            
+
             cp ~/work/mp3packer/_build/default/mp3packer.exe ~/work/mp3packer-freebsd-arm64
             
       - name: Upload executable artifact
