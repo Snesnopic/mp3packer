@@ -33,5 +33,5 @@
       (i686 -mssse3 -msse4.1)
       (otherwise))))
   )
-)
+
 (flags (:standard -w -9-33-35-50-8-27-21)))
