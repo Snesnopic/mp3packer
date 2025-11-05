@@ -70,7 +70,7 @@ jobs:
       - name: Build on FreeBSD x64
         uses: vmactions/freebsd-vm@v1
         with:
-          release: '14.0'
+          release: '15.0'
           arch: 'amd64'
           usesh: true
           prepare: |
@@ -104,7 +104,7 @@ jobs:
       - name: Build on FreeBSD ARM64
         uses: vmactions/freebsd-vm@v1
         with:
-          release: '14.0'
+          release: '15.0'
           arch: 'arm64'
           usesh: true
           prepare: |
