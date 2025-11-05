@@ -25,5 +25,7 @@
    ptr-c
    unicode-c
    mp3framehuffman-c
-   mp3frameutils-c))
+   mp3frameutils-c)
+   (c_flags (:standard -mssse3 -msse4.1))
+)
  (flags (:standard -w -9-33-35-50-8-27-21)))
