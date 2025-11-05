@@ -82,9 +82,7 @@ jobs:
             
             opam install -y dune-configurator
             
-            cd ~/work
-            
-            opam exec -- dune build
+            cd ~/work && opam exec -- dune build
             
             cp _build/default/mp3packer.exe ~/work/mp3packer-freebsd-x64
             
@@ -116,9 +114,7 @@ jobs:
             
             opam install -y dune-configurator
             
-            cd ~/work
-            
-            opam exec -- dune build
+            cd ~/work && opam exec -- dune build
             
             cp _build/default/mp3packer.exe ~/work/mp3packer-freebsd-arm64
             
