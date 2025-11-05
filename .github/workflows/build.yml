@@ -1,4 +1,4 @@
-name: Build mp3packer
+name: Build
 
 on:
   push:
@@ -8,9 +8,9 @@ on:
   pull_request:
 
 jobs:
-  build-standard:
+  build:
     name: Build (${{ matrix.id }})
-    
+
     strategy:
       fail-fast: false
       matrix:
@@ -37,56 +37,89 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up OCaml
+      # install c compiler dependencies on linux
+      - name: Install C compiler
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y build-essential
+
+      # setup ocaml
+      - name: Setup OCaml
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: '4.14.x'
+          opam-depext: true
+          
+      # install dune/str via opam
+      - name: Install Opam Dependencies
+        run: opam install dune str --yes
 
-      - name: Install dependencies
-        run: opam install dune
-
-      - name: Build executable
+      # build for (windows)
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
         run: dune build ./mp3packer.exe
 
-      - name: Upload artifact
+      # build for (unix)
+      - name: Build (Unix)
+        if: runner.os != 'Windows'
+        run: dune build ./mp3packer
+
+      # upload artifact (windows)
+      - name: Upload artifact (Windows)
+        if: runner.os == 'Windows'
         uses: actions/upload-artifact@v4
         with:
           name: mp3packer-${{ matrix.id }}
           path: _build/default/mp3packer.exe
 
+      # upload artifact (unix - includes linux, macos)
+      - name: Upload artifact (Unix)
+        if: runner.os != 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mp3packer-${{ matrix.id }}
+          path: _build/default/mp3packer
+
   build-freebsd:
     name: Build (freebsd-${{ matrix.arch }})
-    runs-on: ubuntu-latest
-    
+    runs-on: macos-14 # host runner for vmactions
     strategy:
       fail-fast: false
       matrix:
-        arch: [amd64, arm64]
+        include:
+          - id: freebsd-amd64
+            arch: amd64
+            freebsd-release: "14.3"
+          - id: freebsd-arm64
+            arch: arm64
+            freebsd-release: "14.3-aarch64"
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run FreeBSD VM and Build
+      - name: Run FreeBSD VM
         uses: vmactions/freebsd-vm@v1
         with:
+          release: ${{ matrix.freebsd-release }}
           arch: ${{ matrix.arch }}
           usesh: true
           run: |
-            pkg install -y ocaml-ocamfind opam
+            # fix pkg and install dependencies
+            pkg install -y ocaml-findlib dune str
             
+            # setup opam
             opam init -a --compiler=ocaml-base-compiler.4.14.2
             eval $(opam env)
             
-            opam install dune str
-            
-            dune build ./mp3packer.exe
+            # build for unix
+            dune build ./mp3packer
 
-      - name: Upload artifact
+      # upload artifact (unix - freebsd)
+      - name: Upload artifact (Unix)
         uses: actions/upload-artifact@v4
         with:
-          name: mp3packer-freebsd-${{ matrix.arch }}
-          path: _build/default/mp3packer.exe
+          name: mp3packer-${{ matrix.id }}
+          path: _build/default/mp3packer

@@ -1,8 +1,5 @@
-; file: dune
-
 (executable
  (name mp3packer)
- ; Elenca tutti i moduli OCaml (file .ml)
  (modules
   types
   p
@@ -20,9 +17,7 @@
   mp3info
   mp3queue
   mp3packer)
- ; Librerie standard richieste
  (libraries unix threads str)
- ; File C per i binding
  (foreign_stubs
   (language c)
   (names
@@ -30,8 +25,5 @@
    ptr-c
    unicode-c
    mp3framehuffman-c
-   mp3frameutils-c)
-
-)
-(flags (:standard -w -9-33-35-50-8-27-21 ))
-)
+   mp3frameutils-c))
+ (flags (:standard -w -9-33-35-50-8-27-21)))
