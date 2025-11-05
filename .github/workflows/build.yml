@@ -62,7 +62,7 @@ jobs:
 
   build-freebsd-x64:
     name: Build (FreeBSD x64)
-    runs-on: macos-15
+    runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -96,7 +96,7 @@ jobs:
 
   build-freebsd-arm64:
     name: Build (FreeBSD ARM64)
-    runs-on: macos-26
+    runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v4
