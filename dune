@@ -18,7 +18,6 @@
   mp3queue
   mp3packer)
  (libraries unix threads str)
-
  (foreign_stubs
   (language c)
   (names
@@ -27,23 +26,21 @@
    unicode-c
    mp3framehuffman-c
    mp3frameutils-c)
-  
-  ; this line stays inside foreign_stubs
+
   (flags :standard (:include flags.sexp))
  )
-
- (rule
-  (target flags.sexp)
-  (enabled_if (or (= %{ocaml_config:architecture} "x86_64")
-                  (= %{ocaml_config:architecture} "amd64")
-                  (= %{ocaml_config:architecture} "i686")))
-  (action (with-stdout-to %{target} (echo "(-mssse3 -msse4.1)"))))
-
- (rule
-  (target flags.sexp)
-  (enabled_if (not (or (= %{ocaml_config:architecture} "x86_64")
-                       (= %{ocaml_config:architecture} "amd64")
-                       (= %{ocaml_config:architecture} "i686"))))
-  (action (with-stdout-to %{target} (echo "()"))))
-
  (flags (:standard -w -9-33-35-50-8-27-21)))
+
+(rule
+ (target flags.sexp)
+ (enabled_if (or (= ocaml_config:architecture "x86_64")
+                 (= ocaml_config:architecture "amd64")
+                 (= ocaml_config:architecture "i686")))
+ (action (with-stdout-to %{target} (echo "(-mssse3 -msse4.1)"))))
+
+(rule
+ (target flags.sexp)
+ (enabled_if (not (or (= ocaml_config:architecture "x86_64")
+                      (= ocaml_config:architecture "amd64")
+                      (= ocaml_config:architecture "i686"))))
+ (action (with-stdout-to %{target} (echo "()"))))
