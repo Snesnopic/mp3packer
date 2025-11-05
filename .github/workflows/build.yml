@@ -29,7 +29,10 @@ jobs:
       with:
         ocaml-compiler: ${{ matrix.ocaml-version }}
         dune-cache: true
-
+    - name: Set CFLAGS for Windows (SSSE3)
+      if: runner.os == 'Windows'
+      run: echo "CFLAGS=-mssse3" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      
     - name: Install OCaml dependencies
       run: |
         opam install dune
