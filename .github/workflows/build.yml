@@ -59,8 +59,7 @@ jobs:
           
       # install dune/str via opam
       - name: Install Opam Dependencies
-        # 'str' is a built-in library, not an opam package.
-        run: opam install dune --yes
+        run: opam install dune unix threads str --yes
 
       # build for (windows)
       - name: Build (Windows)
