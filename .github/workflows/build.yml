@@ -74,7 +74,7 @@ jobs:
           arch: 'amd64'
           usesh: true
           prepare: |
-            pkg install -y ocaml-opam dune
+            pkg install -y ocaml-opam ocaml-dune
           run: |
             opam init -a -y --disable-sandboxing
             opam switch create 4.14.2 -y
@@ -108,7 +108,7 @@ jobs:
           arch: 'arm64'
           usesh: true
           prepare: |
-            pkg install -y ocaml-opam dune
+            pkg install -y ocaml-opam ocaml-dune
           run: |
             opam init -a -y --disable-sandboxing
             opam switch create 4.14.2 -y
