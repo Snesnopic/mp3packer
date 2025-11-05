@@ -29,18 +29,20 @@ jobs:
       with:
         ocaml-compiler: ${{ matrix.ocaml-version }}
         dune-cache: true
-    - name: Set CFLAGS for Windows (SSSE3)
-      if: runner.os == 'Windows'
-      run: echo "CFLAGS=-mssse3" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       
-    - name: Install OCaml dependencies
+    - name: Install dependencies and Build (Windows)
+      if: runner.os == 'Windows'
       run: |
         opam install dune
-        opam install . --deps-only --with-test
+        $env:CFLAGS = "-mssse3"
+        opam exec -- dune build
 
-    - name: Build project
-      run: opam exec -- dune build
-
+    - name: Install dependencies and Build (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        opam install dune
+        opam exec -- dune build
+        
     - name: Upload executable artifact
       uses: actions/upload-artifact@v4
       with:
