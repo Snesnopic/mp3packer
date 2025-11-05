@@ -52,11 +52,14 @@ jobs:
           ocaml-compiler: '4.14.x'
           # set to false to prevent failing apt-get
           opam-depext: false
+          # added: also disable depext tools to fully stop apt-get
+          opam-depext-tools: false
           # added to help windows arm stability
           opam-disable-sandboxing: true
           
       # install dune/str via opam
       - name: Install Opam Dependencies
+        # 'str' is a built-in library, not an opam package.
         run: opam install dune --yes
 
       # build for (windows)
@@ -97,7 +100,8 @@ jobs:
             freebsd-release: "14.3"
           - id: freebsd-arm64
             arch: arm64
-            freebsd-release: "14.3-aarch64"
+            # changed: remove arch from release string
+            freebsd-release: "14.3"
 
     steps:
       - name: Checkout
@@ -107,6 +111,8 @@ jobs:
         uses: vmactions/freebsd-vm@v1
         with:
           release: ${{ matrix.freebsd-release }}
+          # added: pass arch explicitly
+          arch: ${{ matrix.arch }}
           usesh: true
           run: |
             # exit on error and print commands
