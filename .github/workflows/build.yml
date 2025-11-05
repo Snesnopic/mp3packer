@@ -50,11 +50,14 @@ jobs:
         uses: ocaml/setup-ocaml@v2
         with:
           ocaml-compiler: '4.14.x'
+          # set to false to prevent failing apt-get
           opam-depext: false
+          # added to help windows arm stability
+          opam-disable-sandboxing: true
           
       # install dune/str via opam
       - name: Install Opam Dependencies
-        run: opam install dune str --yes
+        run: opam install dune --yes
 
       # build for (windows)
       - name: Build (Windows)
@@ -106,8 +109,11 @@ jobs:
           release: ${{ matrix.freebsd-release }}
           usesh: true
           run: |
-            # fix pkg and install dependencies
-            pkg install -y ocaml-findlib dune str
+            # exit on error and print commands
+            set -ex
+
+            # 'str' is built-in to the ocaml compiler
+            pkg install -y ocaml-findlib dune
             
             # setup opam
             opam init -a --compiler=ocaml-base-compiler.4.14.2
