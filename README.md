@@ -1,6 +1,4 @@
-# **mp3packer (Modern Revival)**
-
-## **Project Status: A Modern Port of a Classic Tool**
+# **mp3packer**
 
 This is a port and revival of the original mp3packer created by **Reed Wilson ("Omion")**. The original project, last updated around 2012, is no longer available from its official source.  
 This repository is maintained with the following goals:
