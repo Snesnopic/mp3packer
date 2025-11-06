@@ -82,10 +82,10 @@ jobs:
             
             opam install -y dune-configurator
             
-            opam exec -- dune build --root ~/work/mp3packer mp3packer/mp3packer.exe
+            opam exec -- dune build --root ~/work mp3packer.exe
             
             mkdir -p ~/work/mp3packer-freebsd-x64
-            cp ~/work/mp3packer/_build/default/mp3packer/mp3packer.exe ~/work/mp3packer-freebsd-x64/
+            cp ~/work/_build/default/mp3packer.exe ~/work/mp3packer-freebsd-x64/
             
       - name: Upload executable artifact
         uses: actions/upload-artifact@v4
@@ -115,10 +115,10 @@ jobs:
             
             opam install -y dune-configurator
             
-            opam exec -- dune build --root ~/work/mp3packer mp3packer/mp3packer.exe
+            opam exec -- dune build --root ~/work mp3packer.exe
             
             mkdir -p ~/work/mp3packer-freebsd-arm64
-            cp ~/work/mp3packer/_build/default/mp3packer/mp3packer.exe ~/work/mp3packer-freebsd-arm64/
+            cp ~/work/_build/default/mp3packer.exe ~/work/mp3packer-freebsd-arm64/
             
       - name: Upload executable artifact
         uses: actions/upload-artifact@v4
