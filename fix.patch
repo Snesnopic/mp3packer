@@ -1,0 +1,20 @@
+--- a/mp3frameutils-c.c
++++ b/mp3frameutils-c.c
+@@ -295,7 +295,7 @@
+	}
+	big1_bits[0].table = 0;
+	big1_bits[0].bits = 0;
+-	for(b = 0; b <= MIN(REGION1_MAX_BANDS - 1, last_nonzero_band - 2); b++) {
++	for(b = 0; b <= MIN(REGION1_MAX_BANDS - 1, last_nonzero_full_band); b++) {
+		int smallest_table = -1;
+		int smallest_bits = TOO_MANY_BITS;
+		uint32_t largest_quant_sub15 = 0;
+@@ -1010,7 +1010,7 @@
+		printf("Before bands:          ");
+		print_table_vec(working_region0);
+	}
+-	for(b = 0; b < MAX_BANDS; b++) {
++	for(b = 0; b <= last_nonzero_full_band; b++) {
+		uint16_t smallest_region0_bits;
+		int smallest_region0_length;
+		uint16_t smallest_region1_bits;
