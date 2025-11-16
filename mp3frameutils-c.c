@@ -173,12 +173,12 @@ CAMLprim value mfu_find_best_config_base(
 		int working_table_0 = 0;
 		int working_table_1 = 0;
 		int num_groups;
-		for(q = num_quants, num_groups = 0; q > (last_nonzero_quant & ~3); q -= 4) {
+		for(q = MAX_QUANTS, num_groups = 0; q > (last_nonzero_quant & ~3); q -= 4) {
 			count1_bits[q / 2].table1 = 0;
 			count1_bits[q / 2].bits1 = 0;
 			count1_bits[q / 2].length = 0;
 		}
-		for(/*q = (last_nonzero_quant & ~3)*/; q > last_big_quant; q -= 4, num_groups++) {
+		for(/*q = (last_nonzero_quant & ~3)*/; q >= 0 && q > last_big_quant; q -= 4, num_groups++) {
 			qv = Count1_table_quant_index(0, quants[q], quants[q + 1], quants[q + 2], quants[q + 3]);
 			working_table_0 += quant_bits_count1[qv + 0];
 			working_table_1 += quant_bits_count1[qv + 1];
@@ -209,12 +209,12 @@ CAMLprim value mfu_find_best_config_base(
 		int working_table_0 = 0;
 		int working_table_1 = 0;
 		int num_groups;
-		for(q = num_quants - 2, num_groups = 0; q > ((last_nonzero_quant + 2) & ~3) - 2; q -= 4) {
+		for(q = MAX_QUANTS - 2, num_groups = 0; q > ((last_nonzero_quant + 2) & ~3) - 2; q -= 4) {
 			count1_bits[q / 2].table1 = 0;
 			count1_bits[q / 2].bits1 = 0;
 			count1_bits[q / 2].length = 0;
 		}
-		for(/*q = ((last_nonzero_quant + 2) & ~3) - 2*/; q > last_big_quant; q -= 4, num_groups++) {
+		for(/*q = ((last_nonzero_quant + 2) & ~3) - 2*/; q >= 0 && q > last_big_quant; q -= 4, num_groups++) {
 			qv = Count1_table_quant_index(0, quants[q], quants[q + 1], quants[q + 2], quants[q + 3]);
 			working_table_0 += quant_bits_count1[qv + 0];
 			working_table_1 += quant_bits_count1[qv + 1];
@@ -253,7 +253,7 @@ CAMLprim value mfu_find_best_config_base(
 	}
 	big1_bits[0].table = 0;
 	big1_bits[0].bits = 0;
-	for(b = 0; b <= MIN(REGION1_MAX_BANDS - 1, last_nonzero_full_band); b++) {
+	for(b = 0; b <= MIN(REGION1_MAX_BANDS - 1, last_nonzero_full_band - 2); b++) {
 		int smallest_table = -1;
 		int smallest_bits = TOO_MANY_BITS;
 		uint32_t largest_quant_sub15 = 0;
@@ -287,28 +287,28 @@ CAMLprim value mfu_find_best_config_base(
 		big1_bits[b + 1].table = smallest_table;
 		big1_bits[b + 1].bits = smallest_bits;
 	}
-	for(b = REGION1_MAX_BANDS; b <= last_nonzero_band - 2; b++) {
+	for(b = REGION1_MAX_BANDS; b <= last_nonzero_full_band - 2; b++) {
 		big1_bits[b + 1].table = -1;
 		big1_bits[b + 1].bits = TOO_MANY_BITS;
 	}
 
 	// Cache the second region
 	// First initialize the working values with the end values of the best first region
-	for(b = 0; b <= last_nonzero_band - 2 + 1; b++) {
+	for(b = 0; b <= last_nonzero_full_band - 2 + 1; b++) {
 		for(t = 0; t < NUM_BIG_TABLES; t++) {
 			working_bits[b][t] = big1_bits[b].bits;
 		}
 	}
 //	printf("last_big_quant = %d\n", last_big_quant);
 //	for(t = 0; t < NUM_BIG_TABLES; t++) {
-//		working_bits[last_nonzero_band - 1][t] = 0;
+//		working_bits[last_nonzero_full_band - 1][t] = 0;
 //	}
 //	printf("last_big_quant = %d\n", last_big_quant);
 	big12_bits[0].prev_length = 0;
 	big12_bits[0].current.table = 0;
 	big12_bits[0].current.bits = 0;
 /*
-	for(b = 0; b <= last_nonzero_band - 1; b++) {
+	for(b = 0; b <= last_nonzero_full_band - 1; b++) {
 		printf("start band %d:\n", b);
 		for(t = 0; t < NUM_BIG_TABLES; t++) {
 			printf(" %4d", (working_bits[b][t] >= TOO_MANY_BITS ? -1 : working_bits[b][t]));
@@ -316,7 +316,7 @@ CAMLprim value mfu_find_best_config_base(
 		printf("\n");
 	}
 */
-	for(b = 0; b <= last_nonzero_band - 1; b++) {
+	for(b = 0; b <= last_nonzero_full_band - 1; b++) {
 		int smallest_table = -1;
 		int smallest_bits = TOO_MANY_BITS;
 		int smallest_region1_length = 0;
@@ -375,7 +375,7 @@ CAMLprim value mfu_find_best_config_base(
 		}
 	}
 /*
-	for(b = 0; b <= last_nonzero_band - 1; b++) {
+	for(b = 0; b <= last_nonzero_full_band - 1; b++) {
 		printf("start band %d:\n", b);
 		for(t = 0; t < NUM_BIG_TABLES; t++) {
 			printf(" %4d", (working_bits[b][t] >= TOO_MANY_BITS ? -1 : working_bits[b][t]));
@@ -390,7 +390,7 @@ CAMLprim value mfu_find_best_config_base(
 	smallest_bits = TOO_MANY_BITS;
 	smallest_end_quant = -1;
 	smallest_prev_length = 0;
-	for(b = 0; b <= last_nonzero_band; b++) {
+	for(b = 0; b <= last_nonzero_full_band; b++) {
 		if(debug) printf("123 is %d:%d\n", b, big12_bits[b].current.bits);
 		for(t = 0; t < NUM_BIG_TABLES; t++) {
 			working_bits[b][t] = big12_bits[b].current.bits;
@@ -409,7 +409,7 @@ CAMLprim value mfu_find_best_config_base(
 			smallest_prev_length = 0;
 		}
 	}
-	for(b = 0; b <= last_nonzero_band; b++) {
+	for(b = 0; b <= last_nonzero_full_band; b++) {
 		uint32_t largest_quant_sub15 = 0;
 		if(debug) printf("B3 = %d\n", b);
 		for(q = scf_bands[b]; q < scf_bands[b + 1]; q += 2) {
@@ -474,7 +474,7 @@ CAMLprim value mfu_find_best_config_base(
 
 
 	if(debug) {
-		for(b = 0; b <= last_nonzero_band - 1; b++) {
+		for(b = 0; b <= last_nonzero_full_band - 1; b++) {
 			printf(" [0+%d] %d, [%d+%d] %d\n",
 				big12_bits[b].prev_length,
 				big1_bits[big12_bits[b].prev_length].table,
@@ -487,7 +487,7 @@ CAMLprim value mfu_find_best_config_base(
 
 	if(0) {
 		printf("Best tables for first region:\n");
-		for(b = 0; b <= last_nonzero_band - 2; b++) {
+		for(b = 0; b <= last_nonzero_full_band - 2; b++) {
 			printf(" %d:%d", big1_bits[b].table, big1_bits[b].bits);
 		}
 		printf("\n");
@@ -815,6 +815,13 @@ CAMLprim value mfu_find_best_config_sse41(
 
 	int q, b, i, qv, t;
 
+	int last_nonzero_quant = -1;
+	int last_nonzero_band = -1;
+	int last_big_quant = -1;
+	int last_big_band = -1;
+	int last_big_full_band = -1;
+	int last_nonzero_full_band = -1;
+
 	__m128i quants_full128[MAX_QUANTS / SHORTS_PER_128];
 	uint16_t *quants_full = (uint16_t *)quants_full128;
 	__m128i quants128[MAX_QUANTS / SHORTS_PER_128];
@@ -860,12 +867,6 @@ CAMLprim value mfu_find_best_config_sse41(
 	}
 
 	enter_blocking_section();
-	int last_nonzero_quant = -1;
-	int last_nonzero_band = -1;
-	int last_big_quant = -1;
-	int last_big_band = -1;
-	int last_big_full_band = -1;
-	int last_nonzero_full_band = -1;
 
 	// Set the abs and min(15,abs) arrays
 	process_quants_ssse3(quants_full128, quants128, quants_raw128);
@@ -897,6 +898,11 @@ CAMLprim value mfu_find_best_config_sse41(
 	// Also set the last band which is completely contained by big_values
 	last_big_full_band = ((scf_bands[last_big_band + 1] == last_big_quant + 1) ? last_big_band : (last_big_band - 1));
 	last_nonzero_full_band = ((scf_bands[last_nonzero_band + 1] == last_nonzero_quant + 1) ? last_nonzero_band : (last_nonzero_band - 1));
+	if(debug) printf("Big quant: %-3d, nonzero quant: %-3d\n", last_big_quant, last_nonzero_quant);
+	if(debug) printf("Big band: %-2d, big full band: %-2d\n", last_big_band, last_big_full_band);
+	if(debug) printf("Nonzero b: %-2d, nonzero full b: %-2d\n", last_nonzero_band, last_nonzero_full_band);
+
+
 	if(debug) {
 		printf("After process_quants\n");
 		fflush(stdout);
@@ -909,104 +915,58 @@ CAMLprim value mfu_find_best_config_sse41(
 		int working_table_0 = 0;
 		int working_table_1 = 0;
 		int num_groups;
-		// Set the initial (unsupported) one
-		for(q = num_quants, num_groups = 0; q >= num_quants; q -= 4) {
-			count1_bits[q/2].table1 = 0;
-			count1_bits[q/2].bits1 = 0;
-			count1_bits[q/2].length = 0;
+		for(q = MAX_QUANTS, num_groups = 0; q > (last_nonzero_quant & ~3); q -= 4) {
+			count1_bits[q / 2].table1 = 0;
+			count1_bits[q / 2].bits1 = 0;
+			count1_bits[q / 2].length = 0;
 		}
-		// Iterate until a nonzero quant has been reached
-		for(/*Reuse*/; q >= 0; q -= 4) {
-			qv = (quants[q] | quants[q + 1] | quants[q + 2] | quants[q + 3]);
-			if(qv > 0) {
-				break;
+		for(/*q = (last_nonzero_quant & ~3)*/; q >= 0 && q > last_big_quant; q -= 4, num_groups++) {
+			qv = Count1_table_quant_index(0, quants[q], quants[q + 1], quants[q + 2], quants[q + 3]);
+			working_table_0 += quant_bits_count1[qv + 0];
+			working_table_1 += quant_bits_count1[qv + 1];
+			if(working_table_0 < working_table_1) {
+				count1_bits[q / 2].table1 = 0;
+				count1_bits[q / 2].bits1 = working_table_0;
+				count1_bits[q / 2].length = num_groups + 1;
 			} else {
-				count1_bits[q/2].table1 = 0;
-				count1_bits[q/2].bits1 = 0;
-				count1_bits[q/2].length = 0;
+				count1_bits[q / 2].table1 = 1;
+				count1_bits[q / 2].bits1 = working_table_1;
+				count1_bits[q / 2].length = num_groups + 1;
 			}
 		}
-		// Iterate until a quant > 1 has been reached
-		for(/*Reuse*/; q >= 0; q -= 4, num_groups++) {
-			qv = (quants[q] | quants[q + 1] | quants[q + 2] | quants[q + 3]);
-			if(qv > 1) {
-				// Too many bits; give up and go home
-				break;
-			} else {
-				qv = Count1_table_quant_index(0, quants[q], quants[q + 1], quants[q + 2], quants[q + 3]);
-				working_table_0 += quant_bits_count1[qv + 0];
-				working_table_1 += quant_bits_count1[qv + 1];
-				count1_bits[q/2].length = num_groups + 1;
-				if(working_table_0 < working_table_1) {
-					count1_bits[q/2].table1 = 0;
-					count1_bits[q/2].bits1 = working_table_0;
-				} else {
-					count1_bits[q/2].table1 = 1;
-					count1_bits[q/2].bits1 = working_table_1;
-				}
-			}
-		}
-		// Fill up the rest with impossibilities
-		for(/*Reuse*/; q >= 0; q -= 4) {
-			count1_bits[q/2].table1 = 0;
-			count1_bits[q/2].bits1 = TOO_MANY_BITS;
-			count1_bits[q/2].length = num_groups;
+		for(/*Reuse last*/; q >= 0; q -= 4) {
+			count1_bits[q / 2].table1 = 0;
+			count1_bits[q / 2].bits1 = TOO_MANY_BITS;
+			count1_bits[q / 2].length = 0;
 		}
 	}
-	{
+	if(last_nonzero_quant + 1 != num_quants) {
 		int working_table_0 = 0;
 		int working_table_1 = 0;
 		int num_groups;
-		// Check the last value to see if it's good
-		for(q = num_quants - 2, num_groups = 0; q >= num_quants - 2; q -= 4) {
-			qv = (quants[q] | quants[q + 1]);
-			count1_bits[q/2].table1 = 0;
-			count1_bits[q/2].length = 0;
-			if(qv > 0) {
-				// No good; poison all other possibilities here
-				working_table_0 = TOO_MANY_BITS;
-				working_table_1 = TOO_MANY_BITS;
-				count1_bits[q/2].bits1 = TOO_MANY_BITS;
+		for(q = MAX_QUANTS - 2, num_groups = 0; q > ((last_nonzero_quant + 2) & ~3) - 2; q -= 4) {
+			count1_bits[q / 2].table1 = 0;
+			count1_bits[q / 2].bits1 = 0;
+			count1_bits[q / 2].length = 0;
+		}
+		for(/*q = ((last_nonzero_quant + 2) & ~3) - 2*/; q >= 0 && q > last_big_quant; q -= 4, num_groups++) {
+			qv = Count1_table_quant_index(0, quants[q], quants[q + 1], quants[q + 2], quants[q + 3]);
+			working_table_0 += quant_bits_count1[qv + 0];
+			working_table_1 += quant_bits_count1[qv + 1];
+			if(working_table_0 < working_table_1) {
+				count1_bits[q / 2].table1 = 0;
+				count1_bits[q / 2].bits1 = working_table_0;
+				count1_bits[q / 2].length = num_groups + 1;
 			} else {
-				count1_bits[q/2].bits1 = 0;
+				count1_bits[q / 2].table1 = 1;
+				count1_bits[q / 2].bits1 = working_table_1;
+				count1_bits[q / 2].length = num_groups + 1;
 			}
 		}
-		// Iterate until a nonzero quant has been reached
-		for(/*Reuse*/; q >= 0 && working_table_0 < TOO_MANY_BITS; q -= 4) {
-			qv = (quants[q] | quants[q + 1] | quants[q + 2] | quants[q + 3]);
-			if(qv > 0) {
-				break;
-			} else {
-				count1_bits[q/2].table1 = 0;
-				count1_bits[q/2].bits1 = 0;
-				count1_bits[q/2].length = 0;
-			}
-		}
-		// Iterate until a quant > 1 has been reached
-		for(/*Reuse*/; q >= 0 && working_table_0 < TOO_MANY_BITS; q -= 4, num_groups++) {
-			qv = (quants[q] | quants[q + 1] | quants[q + 2] | quants[q + 3]);
-			if(qv > 1) {
-				// Too many bits; give up and go home
-				break;
-			} else {
-				qv = Count1_table_quant_index(0, quants[q], quants[q + 1], quants[q + 2], quants[q + 3]);
-				working_table_0 += quant_bits_count1[qv + 0];
-				working_table_1 += quant_bits_count1[qv + 1];
-				count1_bits[q/2].length = num_groups + 1;
-				if(working_table_0 < working_table_1) {
-					count1_bits[q/2].table1 = 0;
-					count1_bits[q/2].bits1 = working_table_0;
-				} else {
-					count1_bits[q/2].table1 = 1;
-					count1_bits[q/2].bits1 = working_table_1;
-				}
-			}
-		}
-		// Fill up the rest with impossibilities
-		for(/*Reuse*/; q >= 0; q -= 4) {
-			count1_bits[q/2].table1 = 0;
-			count1_bits[q/2].bits1 = TOO_MANY_BITS;
-			count1_bits[q/2].length = num_groups;
+		for(/**/; q >= 0; q -= 4) {
+			count1_bits[q / 2].table1 = 0;
+			count1_bits[q / 2].bits1 = TOO_MANY_BITS;
+			count1_bits[q / 2].length = 0;
 		}
 	}
 	if(debug) {
@@ -1078,7 +1038,7 @@ CAMLprim value mfu_find_best_config_sse41(
 			for(i = 0; i <= b; i++) {
 				add_sat_sse2(working_region2 + i, bits_here);
 			}
-			if(count1_bits[q/2+1].bits1 < TOO_MANY_BITS) {
+			if(q + 2 > last_big_quant) {
 				// This is a possible end point
 				if(debug) {
 					printf("Possible big quants end at %d\n", q + 2);
