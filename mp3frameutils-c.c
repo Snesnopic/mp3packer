@@ -253,7 +253,7 @@ CAMLprim value mfu_find_best_config_base(
 	}
 	big1_bits[0].table = 0;
 	big1_bits[0].bits = 0;
-	for(b = 0; b <= MIN(REGION1_MAX_BANDS - 1, last_nonzero_band - 2); b++) {
+	for(b = 0; b <= MIN(REGION1_MAX_BANDS - 1, last_nonzero_full_band); b++) {
 		int smallest_table = -1;
 		int smallest_bits = TOO_MANY_BITS;
 		uint32_t largest_quant_sub15 = 0;
@@ -860,11 +860,43 @@ CAMLprim value mfu_find_best_config_sse41(
 	}
 
 	enter_blocking_section();
+	int last_nonzero_quant = -1;
+	int last_nonzero_band = -1;
+	int last_big_quant = -1;
+	int last_big_band = -1;
+	int last_big_full_band = -1;
+	int last_nonzero_full_band = -1;
 
 	// Set the abs and min(15,abs) arrays
 	process_quants_ssse3(quants_full128, quants128, quants_raw128);
 //	write_max_15_sse41(quants128, quants_full128, num_quants / SHORTS_PER_128);
 
+	// Define last_nonzero_quant, last_nonzero_band, last_big_quant, and last_big_band
+	for(q = num_quants - 2, b = num_scf_bands - 1; q >= 0; q -= 2) {
+		int x = quants[q + 0];
+		int y = quants[q + 1];
+		while(q < scf_bands[b]) b--;
+		if((x | y) > 0) {
+			last_nonzero_quant = q + 1;
+			last_nonzero_band = b;
+//			if(debug) printf("Last nonzero quant is %d in band %d\n", q, b);
+			break;
+		}
+	}
+	for(/*Reuse old values*/; q >= 0; q -= 2) {
+		int x = quants[q + 0];
+		int y = quants[q + 1];
+		while(q < scf_bands[b]) b--;
+		if((x | y) > 1) {
+			last_big_quant = q + 1;
+			last_big_band = b;
+//			if(debug) printf("Last big quant is %d in band %d\n", q, b);
+			break;
+		}
+	}
+	// Also set the last band which is completely contained by big_values
+	last_big_full_band = ((scf_bands[last_big_band + 1] == last_big_quant + 1) ? last_big_band : (last_big_band - 1));
+	last_nonzero_full_band = ((scf_bands[last_nonzero_band + 1] == last_nonzero_quant + 1) ? last_nonzero_band : (last_nonzero_band - 1));
 	if(debug) {
 		printf("After process_quants\n");
 		fflush(stdout);
@@ -1010,7 +1042,7 @@ CAMLprim value mfu_find_best_config_sse41(
 		printf("Before bands:          ");
 		print_table_vec(working_region0);
 	}
-	for(b = 0; b < MAX_BANDS; b++) {
+	for(b = 0; b <= last_nonzero_full_band; b++) {
 		uint16_t smallest_region0_bits;
 		int smallest_region0_length;
 		uint16_t smallest_region1_bits;
