@@ -1,0 +1,143 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>mp3packer</title>
+<style type="text/css">
+<!--
+p {
+	text-align: justify;
+}
+h1 {
+	font-variant: small-caps;
+}
+img {
+	border: 1px solid #000000;
+}
+-->
+</style>
+</head>
+
+<body>
+<h1 align="center">MP3packer Settings</h1>
+<h2 align="center">An MP3 reorganizer</h2>
+<h5 align="center">Copyright &copy; 2006 Reed Wilson (&quot;Omion&quot;)<br />
+  &#x63;<!-- This is all crazy stuff to prevent my email from being read by bots -->&#101;&#8203;&#x64;&#105;&#8203;&#108;&#x6C;<span style="display:none"> LOREM IPSUM DOLOR SIT AMET </span>&#97;&#32;&#x41;<span style="display: none">CCEN</span>&#x54;&#32;&#x67;&#109;<div style="display:none"> CONSECTETUR ADIPISICING ELIT </div>&#x61;<i></i>&#x69;&#108;&#x20;&#68;&#x4F;<b style="display:none">N</b>&#x54;&#8203;&#32;&#99;<div style="display:none"><b>Hmm.. it looks like you don't have CSS. My email will be very hard to decipher</b></div>​<p style="display:none">SED DO EIUSMOD TEMPOR INCIDIDUNT UT LABORE ET DOLORE MAGNA ALIQUA</p>&#111;<!-- Approaching the end, cap'n! -->&#109;</h5>
+<h3>Abstract</h3>
+<p>MP3packer is a program which can rearrange the data within an MP3 to fulfill specific goals. By default, the program generates the smallest MP3 possible (with the least padding). However, many people also use it to turn <abbr title="variable bit rate" lang="en">VBR</abbr> files into <abbr title="constant bit rate" lang="en">CBR</abbr> for use with players which don't support VBR.</p>
+<h3>License</h3>
+<p>This program is free software; you can redistribute it and/or modify      it under the terms of the <abbr title="GNU's Not Unix" lang="en">GNU</abbr> General Public License as published by      the Free Software Foundation; either version 2 of the License, or      (at your option) any later version. Please see <a href="gpl.txt">gpl.txt</a> for more details. Source code for this program should be available from the same source as the compiled version. </p>
+<h3>Usage</h3>
+<p>mp3packer can work on single files or entire directories of MP3 files.</p>
+<h4>Single file</h4>
+<p><code>mp3packer </code>[ <code>options</code> ]<code> in.mp3 </code>[ <code>out</code> ]<br />
+Processes <code>in.mp3</code> according to <code>options</code> and saves the output to <code>out</code>. If <code>out</code> is a directory, mp3packer will keep the same name as <code>in</code> but in the <code>out</code> directory. If <code>out</code> is not given, the <code>-a</code> string will be appended to the file name (see below). <code>options</code>, if specified may be any of the following:</p>
+<dl>
+  <dt><code>-b #</code> </dt>
+  <dd>Minimum bitrate allowed for output. Defaults to 0, which means all frame sizes are allowed. If the number given is a valid bitrate, the minimum frame size will be &quot;dithered&quot; between padded and unpadded frames, depending on standard CBR rules. If the bitrate given is one more than a valid bitrate, all frames will be padded. Anything larger than the maximum bitrate will be clamped to a padded maximum-bitrate frame. All other bitrates will round up to the next higher unpadded frame. <br />
+  For example, <code>-b 129 </code> will result in the smallest allowed frame size being a padded 128kbps frame. <code>-b 117</code> will result in the smallest allowed frame size being an <em>un</em>padded 128kbps frame. If <code>-b 128</code> is used with 44100Hz files, the minimum bitrate will depend on the frame number. Assuming 44100Hz, for 2 frames out of 49 the minimum frame will be unpadded, for the other 47 it will be padded. All bitrates from 114 to 127 will result in the smallest frame being an unpadded 128kbps frame. </dd>
+  <dt><code>-t</code></dt>
+  <dd>Strip non-MP3 data at the beginning of the file. This will remove some knids of ID3v2 tags. Use both <code>-s</code> and <code>-t</code> to remove all tags.</dd>
+  <dt><code>-s</code></dt>
+  <dd>Strip non-MP3 data at the end of the file. Using this option will remove most tags and any incomplete last frames from the file.</dd>
+  <dt><code>-a "-vbr"</code></dt>
+  <dd>Specify the string to append to the file name if no output file name is given. If <code>mp3packer -a &quot;-food&quot; in.mp3</code> is given, the output will be named <code>in-food.mp3</code>. <code>&quot;-vbr&quot;</code> is the default. </dd>
+  <dt><code><s>-X</s></code></dt>
+  <dd><s>Delete input file after sucessful repacking. Only use this option if you are reasonably sure that your files will still be intact. There are no guarantees that the output file will contain the same audio as the input file (though if they are not, it represents a bug in mp3packer)<br />
+  </s>Not implemented yet</dd>
+  <dt><code>-f</code></dt>
+  <dd>Force overwriting of the output file, if it exists.</dd>
+  <dt><code>-i</code></dt>
+  <dd>Print info about the input file, then exit. See the info section for more detials.</dd>
+  <dt><code>-debug</code> [ <code>in</code> | <code>out</code> | <code>all</code> ]</dt>
+  <dd>Prints a bunch of debugging info about the files. <code>-debug in</code> will report frame statistics about the input file. <code>-debug out</code> will report on how the file was processed and written. <code>-debug all</code> does both. It is recommended that you redirect the output to a file, as the information gets very verbose. </dd>
+</dl>
+
+<h4>Entire directory </h4>
+<p>Not yet finished</p>
+<h3>Info</h3>
+<p>By specifying the -i option, the program will print data about the input file then exit. No files will be written and the output (if given) will be ignored. Example printout:</p>
+<pre>*** "test/APS.mp3"
+INFO:
+ MPEG1 layer 3
+ 21687 frames
+ 44100 Hz
+ 38.281250 frames per second
+ 566.517551 seconds
+ 12514543 bytes in file (176.722405 kbps)
+ 12514126 bytes in MP3 frames (176.716516 kbps) = current bitrate
+ 93784923 bits of payload data (165.546368 kbps)
+ 11732617 bytes of payload data (165.680544 kbps)
+ 76013 bits wasted from partially-full bytes (0.134176 kbps)
+ 12513349 bytes of MP3 data (176.705544 kbps) = minimum bitrate possible
+ 777 bytes of padding (0.010972 kbps)
+ 417 bytes outside MP3 frames (0.005889 kbps)
+ Bitrate distribution:
+   32: 9,0
+  128: 3641,0
+  160: 7691,0
+  192: 6700,0
+  224: 2736,0
+  256: 785,0
+  320: 125,0
+ Largest frame uses 8478 bits = 1060 bytes = 324.548437 kbps
+ Smallest bitrate for CBR is 256</pre>
+<h4>Explanation:</h4>
+<dl>
+  <dt><code>*** &quot;test/APS.mp3&quot;</code></dt>
+  <dd>Name of the file processed.</dd>
+  <dt><code> MPEG1 layer 3<br />
+    21687 frames<br />
+  44100 Hz<br />
+  </code><code>38.281250 frames per second
+  <br />
+  566.517551 seconds </code> </dt>
+  <dd>Basic properties of the file. All self-explanatory.</dd>
+  <dt><code>12514543 bytes in file (176.722405 kbps)&nbsp;</code></dt>
+  <dd>The number of bytes in the file and the corresponding bitrate. This bitrate includes tags and non-MP3 data which can be stripped out using the <code>-s</code> and <code>-t</code> options.</dd>
+  <dt><code>12514126 bytes in MP3 frames (176.716516 kbps) = current bitrate&nbsp;</code></dt>
+  <dd>The number of bytes currently in MP3 frames. This does not count tags and broken frames. This is the current bitrate of the file.</dd>
+  <dt><code>93784923 bits of payload data (165.546368 kbps)&nbsp;</code></dt>
+  <dd>The bits of payload data. This ignores padding, headers, side-info, and tags.</dd>
+  <dt><code>11732617 bytes of payload data (165.680544 kbps)&nbsp;</code></dt>
+  <dd>The bytes of payload data. This is not a direct result of line 10, and in fact is generally going to be a higher bitrate than line 10 due to partially-full bytes.</dd>
+  <dt><code>76013 bits wasted from partially-full bytes (0.134176 kbps)&nbsp;</code></dt>
+  <dd>The number of bits wasted from partially-full bytes. Line 12 = (line 11)  * 8 - (line 10). Nothing can be done to &quot;repack&quot; this wasted data.</dd>
+  <dt><code>12513349 bytes of MP3 data (176.705544 kbps) = minimum bitrate possible&nbsp;</code></dt>
+  <dd>The amount of payload data plus headers and side-info. Assuming that mp3packer completely gets rid of all padding and non-mp3 data, this is the smallest bitrate that can be achieved.</dd>
+  <dt><code>777 bytes of padding (0.010972 kbps)&nbsp;</code></dt>
+  <dd>The total amount of padding in the file. This is the main thing that mp3pcker tries to get rid of.</dd>
+  <dt><code>417 bytes outside MP3 frames (0.005889 kbps)&nbsp;</code></dt>
+  <dd>The amount of padding and tags outside of MP3 frames. By default, everything before the first frame and after the last frame is kept, but all non-MP3 data between frames will be discarded.</dd>
+  <dt><code>32: 9,0
+    <br />
+    128: 3641,0
+    <br />
+    160: 7691,0
+    <br />
+    192: 6700,0
+    <br />
+    224: 2736,0
+    <br />
+    256: 785,0
+    <br />
+    320: 125,0&nbsp;</code></dt>
+  <dd>The bitrate distribution of the file. Only the bitrates that actually appear in the file wil be listed. The two numbers given per line are the unpadded,padded frames. In the above example, there are nine unpadded 32kbps frames, and no padded frames of any bitrate.</dd>
+  <dt><code>Largest frame uses 8478 bits = 1060 bytes = 324.548437 kbps&nbsp;</code></dt>
+  <dd>Information about the frame with the largest amount of data. If the bit reservoir were not used, this would be the smallest CBR bitrate possible.</dd>
+  <dt><code>Smallest bitrate for CBR is 256&nbsp;</code></dt>
+  <dd>The smallest value for the -b option that will result in a CBR file. This number is generally much less than the previous line due to the bit reservoir. It is, however, generally much more than the average bitrate because of limitations on the bit reservoir. </dd>
+</dl>
+<h3>Changelog:</h3>
+<dl>
+	<dt>1.03-123 (2006-05-25)</dt>
+	<dd>Remove all data from frames which have been determined to be silent.</dd>
+  <dt>1.02-112 (2006-04-20)</dt>
+  <dd>Fixed the previous fix. Also fixed a problem when an XING tag was parsed as a LAME tag.</dd>
+  <dt>1.01-110 (2006-04-13)</dt>
+  <dd>Fixed a crash when the first frame references data from before the beginning of the file.</dd>
+  <dt>1.00-106 (2006-03-15)</dt>
+  <dd>First release of the OCaml version. I figured it's different enough to start a new changelog.</dd>
+</dl>
+</body>
+</html>
