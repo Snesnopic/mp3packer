@@ -148,7 +148,7 @@ let do_info ?(only_bitrate=false) p ?(debug_info=false) in_name =
 			Printf.printf "\r";
 			let p = (
 				let h f = (Printf.printf "%s\n" f) in
-				fun a -> Printf.kprintf h a
+				fun a -> Printf.ksprintf h a
 			) in
 			if not only_bitrate then (
 				p "INFO:                                           "; (* A bunch of spaces to clear the percentage-done indicator *)

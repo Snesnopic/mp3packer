@@ -383,7 +383,7 @@ CAMLprim value uni_stat_utf16(value name_val) {
 		Store_field(tuple_val,  5, Val_int(buf.st_uid));
 		Store_field(tuple_val,  6, Val_int(buf.st_gid));
 		Store_field(tuple_val,  7, Val_int(buf.st_rdev));
-		Store_field(tuple_val,  8, Val_int(buf.st_size)); // no int64 version
+		Store_field(tuple_val,  8, Val_int(buf.st_size)); // no int64_t version
 		Store_field(tuple_val,  9, copy_double((double)buf.st_atime));
 		Store_field(tuple_val, 10, copy_double((double)buf.st_mtime));
 		Store_field(tuple_val, 11, copy_double((double)buf.st_ctime));

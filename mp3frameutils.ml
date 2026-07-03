@@ -1086,8 +1086,14 @@ let decode_frame : type id chan. _ -> _ -> (id,chan) f1_t -> (id,chan) frame_dat
 		if state.q_debug_recompress then print_side p 4 side_info;
 		p [Str "  Gr0:"];
 
-		let GC_1_mono (gc0,gc1) = side_info.side_gc in
-		let SCFI_mono scfi = side_info.side_scfi in
+		let (gc0, gc1) = match side_info.side_gc with
+			| GC_1_mono (gc0,gc1) -> (gc0, gc1)
+			| _ -> failwith "Impossible: GC_1_mono expected in decode_frame"
+		in
+		let scfi = match side_info.side_scfi with
+			| SCFI_mono scfi -> scfi
+			| _ -> failwith "Impossible: SCFI_mono expected in decode_frame"
+		in
 
 		let s = Ptr.Ref.new_seq f.f1_data in
 		Ptr.Ref.set_seq s gc0.gc_part2_3_offset;
@@ -1124,8 +1130,14 @@ let decode_frame : type id chan. _ -> _ -> (id,chan) f1_t -> (id,chan) frame_dat
 		if state.q_debug_recompress then print_side p 4 side_info;
 
 		let s = Ptr.Ref.new_seq data_ptr_ref in
-		let GC_1_stereo (gc00,gc01,gc10,gc11) = side_info.side_gc in
-		let SCFI_stereo (scfi_ch0, scfi_ch1) = side_info.side_scfi in
+		let (gc00,gc01,gc10,gc11) = match side_info.side_gc with
+			| GC_1_stereo (gc00,gc01,gc10,gc11) -> (gc00,gc01,gc10,gc11)
+			| _ -> failwith "Impossible: GC_1_stereo expected in decode_frame"
+		in
+		let (scfi_ch0, scfi_ch1) = match side_info.side_scfi with
+			| SCFI_stereo (scfi_ch0, scfi_ch1) -> (scfi_ch0, scfi_ch1)
+			| _ -> failwith "Impossible: SCFI_stereo expected in decode_frame"
+		in
 
 		(* things for inline rehuff *)
 		(* The rehuff does nothing for non-normal windows, so just get the scf bands for non-short blocks *)
@@ -1174,7 +1186,10 @@ let decode_frame : type id chan. _ -> _ -> (id,chan) f1_t -> (id,chan) frame_dat
 
 		p [Str "Gr:"];
 		let s = Ptr.Ref.new_seq f.f1_data in
-		let GC_2_mono gc = side_info.side_gc in
+		let gc = match side_info.side_gc with
+			| GC_2_mono gc -> gc
+			| _ -> failwith "Impossible: GC_2_mono expected in decode_frame"
+		in
 		Ptr.Ref.set_seq s gc.gc_part2_3_offset;
 
 		let scf_bands_ptr = global_scalefactors_ptr f.f1_header.header_samplerate false in
@@ -1204,7 +1219,10 @@ let decode_frame : type id chan. _ -> _ -> (id,chan) f1_t -> (id,chan) frame_dat
 		(* Remember that the IS should only be set on the right channel; the left channel uses the same scalefactors as non-IS GCs *)
 		p [Str "  Gr0:"];
 		let s = Ptr.Ref.new_seq f.f1_data in
-		let GC_2_stereo (gc0,gc1) = side_info.side_gc in
+		let (gc0, gc1) = match side_info.side_gc with
+			| GC_2_stereo (gc0,gc1) -> (gc0, gc1)
+			| _ -> failwith "Impossible: GC_2_stereo expected in decode_frame"
+		in
 
 		Ptr.Ref.set_seq s gc0.gc_part2_3_offset;
 
@@ -1442,10 +1460,22 @@ let encode_frame : type id chan. _ -> (id,chan) frame_data_t -> (id,chan) f1_t =
 		(* 1931 bytes is the maximum for one frame. It fills up all 1441 bytes (minus 4 for header and 17 for side) of a 32khz 320kbps padded frame plus 511 bytes for the reservoir *)
 		let out_ptr = Ptr.clearret (Ptr.make 1931 0) in (* 2881??? Where did I get that from? *)
 		let s = Ptr.new_seq out_ptr in
-		let GC_1_mono (gc0,gc1) = m.m1_side_info.side_gc in
-		let M1_scalefactors_mono (scf0,scf1) = m.m1_scalefactors in
-		let M1_quantizers_mono (qp0,qp1) = m.m1_quantizer_ptrs in
-		let SCFI_mono scfi = m.m1_side_info.side_scfi in
+		let (gc0, gc1) = match m.m1_side_info.side_gc with
+			| GC_1_mono (gc0,gc1) -> (gc0, gc1)
+			| _ -> failwith "Impossible: GC_1_mono expected in encode_frame"
+		in
+		let (scf0, scf1) = match m.m1_scalefactors with
+			| M1_scalefactors_mono (scf0,scf1) -> (scf0, scf1)
+			| _ -> failwith "Impossible: M1_scalefactors_mono expected in encode_frame"
+		in
+		let (qp0, qp1) = match m.m1_quantizer_ptrs with
+			| M1_quantizers_mono (qp0,qp1) -> (qp0, qp1)
+			| _ -> failwith "Impossible: M1_quantizers_mono expected in encode_frame"
+		in
+		let scfi = match m.m1_side_info.side_scfi with
+			| SCFI_mono scfi -> scfi
+			| _ -> failwith "Impossible: SCFI_mono expected in encode_frame"
+		in
 
 		let r0 = s.Ptr.seq_at in
 		p [Str "Doing first granule at "; Int r0; Str " (had better be 0)"];
@@ -1528,10 +1558,22 @@ let encode_frame : type id chan. _ -> (id,chan) frame_data_t -> (id,chan) f1_t =
 		(* 1916 bytes is the maximum for one frame. It fills up all 1441 bytes (minus 4 for header and 32 for side) of a 32khz 320kbps padded frame plus 511 bytes for the reservoir *)
 		let out_ptr = Ptr.clearret (Ptr.make 1916 0) in (* 2881 *)
 		let s = Ptr.new_seq out_ptr in
-		let GC_1_stereo (gc00,gc01,gc10,gc11) = m.m1_side_info.side_gc in
-		let M1_scalefactors_stereo (scf00,scf01,scf10,scf11) = m.m1_scalefactors in
-		let M1_quantizers_stereo (qp00,qp01,qp10,qp11) = m.m1_quantizer_ptrs in
-		let SCFI_stereo (scfi_ch0, scfi_ch1) = m.m1_side_info.side_scfi in
+		let (gc00,gc01,gc10,gc11) = match m.m1_side_info.side_gc with
+			| GC_1_stereo (gc00,gc01,gc10,gc11) -> (gc00,gc01,gc10,gc11)
+			| _ -> failwith "Impossible: GC_1_stereo expected in encode_frame"
+		in
+		let (scf00,scf01,scf10,scf11) = match m.m1_scalefactors with
+			| M1_scalefactors_stereo (scf00,scf01,scf10,scf11) -> (scf00,scf01,scf10,scf11)
+			| _ -> failwith "Impossible: M1_scalefactors_stereo expected in encode_frame"
+		in
+		let (qp00,qp01,qp10,qp11) = match m.m1_quantizer_ptrs with
+			| M1_quantizers_stereo (qp00,qp01,qp10,qp11) -> (qp00,qp01,qp10,qp11)
+			| _ -> failwith "Impossible: M1_quantizers_stereo expected in encode_frame"
+		in
+		let (scfi_ch0, scfi_ch1) = match m.m1_side_info.side_scfi with
+			| SCFI_stereo (scfi_ch0, scfi_ch1) -> (scfi_ch0, scfi_ch1)
+			| _ -> failwith "Impossible: SCFI_stereo expected in encode_frame"
+		in
 
 		let r0 = s.Ptr.seq_at in (* had better be 0 *)
 		p [Str "Doing first granule at "; Int r0; Str " (had better be 0)"];
@@ -1627,9 +1669,18 @@ let encode_frame : type id chan. _ -> (id,chan) frame_data_t -> (id,chan) f1_t =
 		(* 1441 bytes per frame (8khz, 160kbps, padded) - 4 byte header - 9 byte side + 255 byte reservoir *)
 		let out_ptr = Ptr.clearret (Ptr.make 1683 0) in (* 5761??? *)
 		let s = Ptr.new_seq out_ptr in
-		let GC_2_mono gc = m.m2_side_info.side_gc in
-		let M2_scalefactors_mono scf = m.m2_scalefactors in
-		let M2_quantizers_mono qp = m.m2_quantizer_ptrs in
+		let gc = match m.m2_side_info.side_gc with
+			| GC_2_mono gc -> gc
+			| _ -> failwith "Impossible: GC_2_mono expected in encode_frame"
+		in
+		let scf = match m.m2_scalefactors with
+			| M2_scalefactors_mono scf -> scf
+			| _ -> failwith "Impossible: M2_scalefactors_mono expected in encode_frame"
+		in
+		let qp = match m.m2_quantizer_ptrs with
+			| M2_quantizers_mono qp -> qp
+			| _ -> failwith "Impossible: M2_quantizers_mono expected in encode_frame"
+		in
 
 		let r0 = s.Ptr.seq_at in
 		p [Str "Doing first (and only) granule at "; Int r0; Str " (had better be 0)"];
@@ -1698,9 +1749,18 @@ let encode_frame : type id chan. _ -> (id,chan) frame_data_t -> (id,chan) f1_t =
 		(* 1441 bytes per frame (8khz, 160kbps, padded) - 4 byte header - 17 byte side + 255 byte reservoir *)
 		let out_ptr = Ptr.clearret (Ptr.make 1675 0) in (* 5761??? *)
 		let s = Ptr.new_seq out_ptr in
-		let GC_2_stereo (gc0,gc1) = m.m2_side_info.side_gc in
-		let M2_scalefactors_stereo (scf0,scf1) = m.m2_scalefactors in
-		let M2_quantizers_stereo (qp0,qp1) = m.m2_quantizer_ptrs in
+		let (gc0, gc1) = match m.m2_side_info.side_gc with
+			| GC_2_stereo (gc0,gc1) -> (gc0, gc1)
+			| _ -> failwith "Impossible: GC_2_stereo expected in encode_frame"
+		in
+		let (scf0, scf1) = match m.m2_scalefactors with
+			| M2_scalefactors_stereo (scf0,scf1) -> (scf0, scf1)
+			| _ -> failwith "Impossible: M2_scalefactors_stereo expected in encode_frame"
+		in
+		let (qp0, qp1) = match m.m2_quantizer_ptrs with
+			| M2_quantizers_stereo (qp0,qp1) -> (qp0, qp1)
+			| _ -> failwith "Impossible: M2_quantizers_stereo expected in encode_frame"
+		in
 		let is_is = match m.m2_header.header_channel_mode with
 			| Stereo Stereo_joint {js_is = is} -> is
 			| _ -> false

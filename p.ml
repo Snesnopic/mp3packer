@@ -28,7 +28,7 @@ let new_id ?(channel=stdout) n =
 ;;
 
 let print_spaces b total_len =
-	for i = 1 to total_len do
+	for _ = 1 to total_len do
 		Buffer.add_char b ' '
 	done
 ;;
@@ -167,7 +167,7 @@ let rec print_int_zeroes b total_len v =
 		)
 	) else (
 		let v_len = int_len v in
-		for i = v_len to total_len - 1 do
+		for _ = v_len to total_len - 1 do
 			Buffer.add_char b '0'
 		done;
 		print_int b v

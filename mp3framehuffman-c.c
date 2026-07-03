@@ -330,20 +330,18 @@ static unsigned int get_bits_slow(seq_string_t *s, int num_bits) {
 }
 
 static unsigned int get_bits_wordwise(seq_string_t *s, int num_bits) {
-	uint32 *int_ptr;
-	uint32 raw;
-	int_ptr = (uint32 *)s->byte_ptr;
+	uint32_t *int_ptr;
+	uint32_t raw;
+	int_ptr = (uint32_t *)s->byte_ptr;
 
-#if 1
-	raw = _byteswap_ulong(*int_ptr) << s->bit_index;
-#else
+
 	raw = (
 		(s->byte_ptr[0] << 24) |
 		(s->byte_ptr[1] << 16) |
 		(s->byte_ptr[2] <<  8) |
 		(s->byte_ptr[3]      )
 	);
-#endif
+	
 	raw >>= 1;
 	raw >>= 31 - num_bits;
 
@@ -387,13 +385,13 @@ static int decode_big_quants(
 		x = got >> 4;
 		if(x > 0) {
 			if(x == 15) {
-				x += get_bits_wordwise(s, linbits);
+				x += get_bits_slow(s, linbits);
 			}
 			x *= 1 - 2 * get_1_bit(s);
 		}
 		if(y > 0) {
 			if(y == 15) {
-				y += get_bits_wordwise(s, linbits);
+				y += get_bits_slow(s, linbits);
 			}
 			y *= 1 - 2 * get_1_bit(s);
 		}
@@ -428,7 +426,7 @@ CAMLprim value mfh_decode_big_quants(
 
 	CAMLlocal1(out_val);
 
-	enter_blocking_section();
+	caml_enter_blocking_section();
 
 	s.start_byte_ptr = in_chars;
 	s.byte_ptr = in_chars + (in_off >> 3);
@@ -436,7 +434,7 @@ CAMLprim value mfh_decode_big_quants(
 
 	out_off = decode_big_quants(&s, out_quants, in_off_too_many, out_off, out_off_too_many, ht);
 
-	leave_blocking_section();
+	caml_leave_blocking_section();
 
 	out_val = caml_alloc_tuple(2);
 	Store_field(out_val, 0, Val_int(bit_off(&s)));
@@ -509,7 +507,7 @@ CAMLprim value mfh_decode_all_big_quants(
 
 	CAMLlocal1(out_val);
 
-	enter_blocking_section();
+	caml_enter_blocking_section();
 
 	s.start_byte_ptr = in_chars;
 	s.byte_ptr = in_chars + (in_off >> 3);
@@ -517,7 +515,7 @@ CAMLprim value mfh_decode_all_big_quants(
 
 	out_off = decode_all_big_quants(&s, out_quants, in_off_too_many, count0, ht0, count1, ht1, count2, ht2, &error);
 
-	leave_blocking_section();
+	caml_leave_blocking_section();
 
 	out_val = caml_alloc_tuple(2);
 	Store_field(out_val, 0, Val_int(bit_off(&s)));
@@ -650,7 +648,7 @@ CAMLprim value mfh_decode_count1_quants(
 
 	CAMLlocal1(out_val);
 
-	enter_blocking_section();
+	caml_enter_blocking_section();
 
 	s.start_byte_ptr = in_chars;
 	s.byte_ptr = in_chars + (in_off >> 3);
@@ -755,7 +753,7 @@ CAMLprim value mfh_decode_count1_quants(
 	}
 //	printf("OUT_OFF = %d at end (overboard? %d)\n", out_off, overboard);
 */
-	leave_blocking_section();
+	caml_leave_blocking_section();
 
 //	printf("OB: %d, BO: %d, OO: %d\n", overboard, bit_off(&s), out_off);
 
@@ -832,7 +830,7 @@ CAMLprim value mfh_decode_all_quants(
 
 	CAMLlocal1(out_val);
 
-	enter_blocking_section();
+	caml_enter_blocking_section();
 
 	s.start_byte_ptr = in_chars;
 	s.byte_ptr = in_chars + (in_off >> 3);
@@ -842,7 +840,7 @@ CAMLprim value mfh_decode_all_quants(
 
 //	out_off = decode_count1_quants(&s, out_quants, in_off_too_many, out_off, out_off_too_many, count1_ht1, &overboard);
 
-	leave_blocking_section();
+	caml_leave_blocking_section();
 
 	out_val = caml_alloc_tuple(4);
 	Store_field(out_val, 0, Val_bool(error));
@@ -1247,9 +1245,9 @@ CAMLprim value mfh_write_big_to_frame(value quants_val, value index_val, value l
 
 	seq_t s = continue_seq(ptr, bit_off);
 
-	enter_blocking_section();
+	caml_enter_blocking_section();
 	write_big_to_frame(quants, index, left, hti, &s);
-	leave_blocking_section();
+	caml_leave_blocking_section();
 
 	CAMLreturn(Val_int(finalize_seq(&s)));
 }
@@ -1367,9 +1365,9 @@ CAMLprim value mfh_write_all_to_frame(
 //	fflush(stdout);
 //	printf("QUANTS IN C:");
 
-	enter_blocking_section();
+	caml_enter_blocking_section();
 	write_all_to_frame(quants, num_quants, region0_count, region0_table, region1_count, region1_table, region2_count, region2_table, part1_table_a, &s);
-	leave_blocking_section();
+	caml_leave_blocking_section();
 
 //	printf("\n");
 //	fflush(stdout);

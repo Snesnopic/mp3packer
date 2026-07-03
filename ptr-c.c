@@ -15,8 +15,8 @@
 
 
 //#pragma message ( "BLOCKING SECTION OVERRIDDEN ptr-c.c" )
-//#define enter_blocking_section()
-//#define leave_blocking_section()
+//#define caml_enter_blocking_section()
+//#define caml_leave_blocking_section()
 
 #ifdef _WIN32
 #define HAS_BYTESWAP 1
@@ -77,7 +77,7 @@ CAMLprim value ptr_make(value length_val, value align_val) {
 	if(alloc_begin == NULL) {
 		// Aligned alloc failed for some reason; do a regular padded alloc
 		alloc_begin = (char *)malloc(length + align - 1);
-		if(alloc_begin == NULL) raise_out_of_memory();
+		if(alloc_begin == NULL) caml_raise_out_of_memory();
 
 		begin = (char *)((((size_t)alloc_begin + align - 1) / align) * align);
 	} else {
@@ -108,7 +108,7 @@ value ptr_get_page_size() {
 	GetSystemInfo(&si);
 	return(Val_long(si.dwPageSize));
 #else
-	return(Val_long(getpagesize()));
+	return(Val_long(sysconf(_SC_PAGESIZE)));
 #endif
 }
 /*
@@ -126,7 +126,7 @@ CAMLprim value ptr_make_virtual_alloc(value page_size_val, value length_val) {
 	CAMLlocal1(cust);
 
 	begin = (char *)VirtualAlloc(NULL, length, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-	if(begin == NULL) raise_out_of_memory();
+	if(begin == NULL) caml_raise_out_of_memory();
 
 	cust = caml_alloc_custom(&generic_ptr_opts, sizeof(struct ptr_struct), length, 64 * 1024 * 1024);
 	p = Struct_val(cust);
@@ -213,19 +213,19 @@ CAMLprim void ptr_put_16_of_int(value ptr_val, value offset_val, value put_val) 
 }
 CAMLprim void ptr_put_32_of_int(value ptr_val, value offset_val, value put_val) {
 //	CAMLparam3(ptr_val, offset_val, put_val);
-	int32 *loc = (int32 *)(Begin_val(ptr_val) + Long_val(offset_val));
+	int32_t *loc = (int32_t *)(Begin_val(ptr_val) + Long_val(offset_val));
 	*loc = Int_val(put_val);
 //	CAMLreturn0;
 }
 CAMLprim void ptr_put_64_of_int(value ptr_val, value offset_val, value put_val) {
 //	CAMLparam3(ptr_val, offset_val, put_val);
-	int64 *loc = (int64 *)(Begin_val(ptr_val) + Long_val(offset_val));
+	int64_t *loc = (int64_t *)(Begin_val(ptr_val) + Long_val(offset_val));
 	*loc = Long_val(put_val);
 //	CAMLreturn0;
 }
 CAMLprim void ptr_put_64_of_int64(value ptr_val, value offset_val, value put_val) {
 //	CAMLparam3(ptr_val, offset_val, put_val);
-	int64 *loc = (int64 *)(Begin_val(ptr_val) + Long_val(offset_val));
+	int64_t *loc = (int64_t *)(Begin_val(ptr_val) + Long_val(offset_val));
 	*loc = Int64_val(put_val);
 //	CAMLreturn0;
 }
@@ -270,31 +270,31 @@ CAMLprim value ptr_get_int_of_16u(value ptr_val, value offset_val) {
 }
 CAMLprim value ptr_get_int_of_32(value ptr_val, value offset_val) {
 //	CAMLparam2(ptr_val, offset_val);
-	int32 *loc = (int32 *)(Begin_val(ptr_val) + Long_val(offset_val));
+	int32_t *loc = (int32_t *)(Begin_val(ptr_val) + Long_val(offset_val));
 //	CAMLreturn(Val_int(*loc));
 	return(Val_int(*loc));
 }
 CAMLprim value ptr_get_int_of_32u(value ptr_val, value offset_val) {
 //	CAMLparam2(ptr_val, offset_val);
-	uint32 *loc = (uint32 *)(Begin_val(ptr_val) + Long_val(offset_val));
+	uint32_t *loc = (uint32_t *)(Begin_val(ptr_val) + Long_val(offset_val));
 //	CAMLreturn(Val_int(*loc));
 	return(Val_int(*loc));
 }
 CAMLprim value ptr_get_int_of_64(value ptr_val, value offset_val) {
 //	CAMLparam2(ptr_val, offset_val);
-	int64 *loc = (int64 *)(Begin_val(ptr_val) + Long_val(offset_val));
+	int64_t *loc = (int64_t *)(Begin_val(ptr_val) + Long_val(offset_val));
 //	CAMLreturn(Val_int(*loc));
 	return(Val_int(*loc));
 }
 CAMLprim value ptr_get_int_of_64u(value ptr_val, value offset_val) {
 //	CAMLparam2(ptr_val, offset_val);
-	uint64 *loc = (uint64 *)(Begin_val(ptr_val) + Long_val(offset_val));
+	uint64_t *loc = (uint64_t *)(Begin_val(ptr_val) + Long_val(offset_val));
 //	CAMLreturn(Val_int(*loc));
 	return(Val_int(*loc));
 }
 CAMLprim value ptr_get_int64_of_64(value ptr_val, value offset_val) {
 	CAMLparam2(ptr_val, offset_val);
-	int64 *loc = (int64 *)(Begin_val(ptr_val) + Long_val(offset_val));
+	int64_t *loc = (int64_t *)(Begin_val(ptr_val) + Long_val(offset_val));
 	CAMLlocal1(out_val);
 	out_val = caml_copy_int64(*loc);
 	CAMLreturn(out_val);
@@ -326,8 +326,8 @@ CAMLprim void ptr_put_16_of_int_bswap(value ptr_val, value offset_val, value put
 }
 
 CAMLprim void ptr_put_32_of_int_bswap(value ptr_val, value offset_val, value put_val) {
-	uint32 *loc = (uint32 *)(Begin_val(ptr_val) + Long_val(offset_val));
-	uint32 put = Int_val(put_val);
+	uint32_t *loc = (uint32_t *)(Begin_val(ptr_val) + Long_val(offset_val));
+	uint32_t put = Int_val(put_val);
 #if HAS_BYTESWAP
 	put = _byteswap_ulong(put);
 #else
@@ -339,9 +339,9 @@ CAMLprim void ptr_put_32_of_int_bswap(value ptr_val, value offset_val, value put
 
 // bswap only works on ints, so we have to go double -> float -> int
 CAMLprim void ptr_put_32_of_float_bswap(value ptr_val, value offset_val, value put_val) {
-	uint32 *loc = (uint32 *)(Begin_val(ptr_val) + Long_val(offset_val));
+	uint32_t *loc = (uint32_t *)(Begin_val(ptr_val) + Long_val(offset_val));
 	float put_float = Double_val(put_val);
-	uint32 put = *((uint32 *)(&put_float));
+	uint32_t put = *((uint32_t *)(&put_float));
 #if HAS_BYTESWAP
 	put = _byteswap_ulong(put);
 #else
@@ -352,8 +352,8 @@ CAMLprim void ptr_put_32_of_float_bswap(value ptr_val, value offset_val, value p
 }
 
 CAMLprim value ptr_get_int_of_32u_bswap(value ptr_val, value offset_val) {
-	uint32 *loc = (uint32 *)(Begin_val(ptr_val) + Long_val(offset_val));
-	uint32 got = loc[0];
+	uint32_t *loc = (uint32_t *)(Begin_val(ptr_val) + Long_val(offset_val));
+	uint32_t got = loc[0];
 #if HAS_BYTESWAP
 	got = _byteswap_ulong(got);
 #else
@@ -507,7 +507,7 @@ CAMLprim value ptr_map_handle(value h_val, value from_val, value len_val, value 
 			p->begin = map_ptr;
 			p->alloc_begin = map_ptr;
 			p->length = len;
-			p->align = getpagesize();
+			p->align = sysconf(_SC_PAGESIZE);
 			p->type = PTR_MMAP;
 		}
 	}
@@ -599,7 +599,7 @@ CAMLprim value ptr_read(value fd, value ptr, value ofs, value len, value really_
 		int ret;
 		SOCKET s = Socket_val(fd);
 
-		enter_blocking_section();
+		caml_enter_blocking_section();
 		do {
 			ret = recv(s, c, num_bytes, 0);
 			if(ret == SOCKET_ERROR) {
@@ -614,13 +614,13 @@ CAMLprim value ptr_read(value fd, value ptr, value ofs, value len, value really_
 				break;
 			}
 		} while(really && num_bytes > 0);
-		leave_blocking_section();
+		caml_leave_blocking_section();
 
 		num_read = ret;
 	} else {
 		HANDLE h = Handle_val(fd);
 
-		enter_blocking_section();
+		caml_enter_blocking_section();
 		do {
 			if(!ReadFile(h, c, num_bytes, &num_read, o_star)) {
 				err = GetLastError();
@@ -633,7 +633,7 @@ CAMLprim value ptr_read(value fd, value ptr, value ofs, value len, value really_
 				o_star->Offset += num_read;
 			}
 		} while(really && num_bytes > 0);
-		leave_blocking_section();
+		caml_leave_blocking_section();
 
 	}
 	if(err) {
@@ -657,7 +657,7 @@ CAMLprim value ptr_read(value fd, value ptr, value ofs, value len, value really_
 
 	if(pos_passed < 0) {
 		// Read normally
-		enter_blocking_section();
+		caml_enter_blocking_section();
 		do {
 			num_read = read(h, c, num_bytes);
 			if(num_read <= 0) {
@@ -666,10 +666,10 @@ CAMLprim value ptr_read(value fd, value ptr, value ofs, value len, value really_
 			}
 			total_bytes += num_read; c += num_read;
 		} while(really && total_bytes < num_bytes);
-		leave_blocking_section();
+		caml_leave_blocking_section();
 	} else {
 		// Use pread to read from a specific point
-		enter_blocking_section();
+		caml_enter_blocking_section();
 		do {
 			num_read = pread(h, c, num_bytes, pos_passed);
 			if(num_read <= 0) {
@@ -678,7 +678,7 @@ CAMLprim value ptr_read(value fd, value ptr, value ofs, value len, value really_
 			}
 			total_bytes += num_read; c += num_read; pos_passed += num_read;
 		} while(really && total_bytes < num_bytes);
-		leave_blocking_section();
+		caml_leave_blocking_section();
 	}
 	// Uhhh... I assume uerror uses errno
 	// unix_error seems to be the same, but you can specify your own errno
@@ -730,7 +730,7 @@ CAMLprim value ptr_write(value fd, value ptr, value ofs, value len, value really
 		int ret;
 		SOCKET s = Socket_val(fd);
 
-		enter_blocking_section();
+		caml_enter_blocking_section();
 		do {
 			ret = send(s, c, num_bytes, 0);
 			if(ret == SOCKET_ERROR) {
@@ -746,13 +746,13 @@ CAMLprim value ptr_write(value fd, value ptr, value ofs, value len, value really
 				break;
 			}
 		} while(really && num_bytes > 0);
-		leave_blocking_section();
+		caml_leave_blocking_section();
 
 		num_wrote = ret;
 	} else {
 		HANDLE h = Handle_val(fd);
 
-		enter_blocking_section();
+		caml_enter_blocking_section();
 		do {
 			if(!WriteFile(h, c, num_bytes, &num_wrote, o_star)) {
 				err = GetLastError();
@@ -761,7 +761,7 @@ CAMLprim value ptr_write(value fd, value ptr, value ofs, value len, value really
 			total_bytes += num_wrote; c += num_wrote;
 			num_bytes -= num_wrote;
 		} while(really && num_bytes > 0);
-		leave_blocking_section();
+		caml_leave_blocking_section();
 
 	}
 	if(err) {
@@ -786,7 +786,7 @@ CAMLprim value ptr_write(value fd, value ptr, value ofs, value len, value really
 
 	if(pos_passed < 0) {
 		// Write normally
-		enter_blocking_section();
+		caml_enter_blocking_section();
 		do {
 			num_write = write(h, c, num_bytes);
 			if(num_write <= 0) {
@@ -795,10 +795,10 @@ CAMLprim value ptr_write(value fd, value ptr, value ofs, value len, value really
 			}
 			total_bytes += num_write; c += num_write;
 		} while(really && total_bytes < num_bytes);
-		leave_blocking_section();
+		caml_leave_blocking_section();
 	} else {
 		// Use pwrite
-		enter_blocking_section();
+		caml_enter_blocking_section();
 		do {
 			num_write = pwrite(h, c, num_bytes, pos_passed);
 			if(num_write <= 0) {
@@ -807,7 +807,7 @@ CAMLprim value ptr_write(value fd, value ptr, value ofs, value len, value really
 			}
 			total_bytes += num_write; c += num_write; pos_passed += num_write;
 		} while(really && total_bytes < num_bytes);
-		leave_blocking_section();
+		caml_leave_blocking_section();
 	}
 	if(err) {
 		unix_error(err, "Ptr.write", Nothing);
@@ -826,13 +826,13 @@ CAMLprim value make_ptr_caml(value size_val, value align_val) {
 	char *actual_pointer;
 	char *returned_pointer;
 	intnat align = (Int_val(align_val) > 0 ? Int_val(align_val) : 1);
-	intnat alloc_size = Long_val(size_val) + sizeof(/*__int32*/size_t) + align - 1;
+	intnat alloc_size = Long_val(size_val) + sizeof(/*__int32_t*/size_t) + align - 1;
 	CAMLlocal2(cust,tuple);
 	actual_pointer = (char *)malloc(alloc_size);
 
-	if(actual_pointer == NULL) raise_out_of_memory();
+	if(actual_pointer == NULL) caml_raise_out_of_memory();
 
-	returned_pointer = (char *)((((size_t)actual_pointer + sizeof(/*__int32*/size_t) + align - 1) / align) * align);
+	returned_pointer = (char *)((((size_t)actual_pointer + sizeof(/*__int32_t*/size_t) + align - 1) / align) * align);
 	((char **)returned_pointer)[-1] = actual_pointer;
 
 	cust = caml_alloc_custom(&generic_ptr_opts, sizeof(char *), Int_val(size_val), 64*1024*1024);
@@ -881,7 +881,7 @@ CAMLprim value ptr_compare_caml(value v1, value v2) {
 	int i;
 	int ret = 0;
 
-	enter_blocking_section();
+	caml_enter_blocking_section();
 	if(l1 < l2) {
 		ret = -1;
 	} else if(l1 > l2) {
@@ -901,7 +901,7 @@ CAMLprim value ptr_compare_caml(value v1, value v2) {
 			}
 		}
 	}
-	leave_blocking_section();
+	caml_leave_blocking_section();
 
 	CAMLreturn(Val_int(ret));
 }
@@ -914,7 +914,7 @@ CAMLprim value ptr_compare_sub_caml(value v1, value v1_off, value v2, value v2_o
 	int i;
 	int ret = 0;
 
-	enter_blocking_section();
+	caml_enter_blocking_section();
 	for(i = 0; i < len; i++) {
 		if(*c1 < *c2) {
 			ret = -1;
@@ -927,7 +927,7 @@ CAMLprim value ptr_compare_sub_caml(value v1, value v1_off, value v2, value v2_o
 			c2++;
 		}
 	}
-	leave_blocking_section();
+	caml_leave_blocking_section();
 
 	CAMLreturn(Val_int(ret));
 }
@@ -959,61 +959,61 @@ CAMLprim void blit_to_string_caml(value ptr_val, value ptr_off_val, value str_va
 
 CAMLprim void put_int_to_32_caml(value ptr_val, value offset_val, value put_val) {
 	CAMLparam3(ptr_val, offset_val, put_val);
-	int32 *loc = (int32 *)(ptr_value(ptr_val) + Int_val(offset_val));
+	int32_t *loc = (int32_t *)(ptr_value(ptr_val) + Int_val(offset_val));
 	*loc = Int_val(put_val);
 	CAMLreturn0;
 }
 
 CAMLprim void put_int_to_64_caml(value ptr_val, value offset_val, value put_val) {
 	CAMLparam3(ptr_val, offset_val, put_val);
-	int64 *loc = (int64 *)(ptr_value(ptr_val) + Int_val(offset_val));
+	int64_t *loc = (int64_t *)(ptr_value(ptr_val) + Int_val(offset_val));
 	*loc = Long_val(put_val);
 	CAMLreturn0;
 }
 
 CAMLprim value get_32_to_int_caml(value ptr_val, value offset_val) {
 	CAMLparam2(ptr_val, offset_val);
-	int32 *loc = (int32 *)(ptr_value(ptr_val) + Int_val(offset_val));
+	int32_t *loc = (int32_t *)(ptr_value(ptr_val) + Int_val(offset_val));
 	CAMLreturn(Val_int(*loc));
 }
 
 CAMLprim value get_64_to_int_caml(value ptr_val, value offset_val) {
 	CAMLparam2(ptr_val, offset_val);
-	int64 *loc = (int64 *)(ptr_value(ptr_val) + Int_val(offset_val));
+	int64_t *loc = (int64_t *)(ptr_value(ptr_val) + Int_val(offset_val));
 	CAMLreturn(Val_int(*loc));
 }
 
-CAMLprim void put_int64_caml(value ptr_val, value offset_val, value int64_val) {
-	CAMLparam3(ptr_val, offset_val, int64_val);
-	int64 *loc = (int64 *)(ptr_value(ptr_val) + Int_val(offset_val));
-	*loc = Int64_val(int64_val);
+CAMLprim void put_int64_t_caml(value ptr_val, value offset_val, value int64_t_val) {
+	CAMLparam3(ptr_val, offset_val, int64_t_val);
+	int64_t *loc = (int64_t *)(ptr_value(ptr_val) + Int_val(offset_val));
+	*loc = int64_t_val(int64_t_val);
 	CAMLreturn0;
 }
 
-CAMLprim value get_int64_caml(value ptr_val, value offset_val) {
+CAMLprim value get_int64_t_caml(value ptr_val, value offset_val) {
 	CAMLparam2(ptr_val, offset_val);
-	int64 *loc;
+	int64_t *loc;
 	CAMLlocal1(out_val);
 
-	loc = (int64 *)(ptr_value(ptr_val) + Int_val(offset_val));
-	out_val = caml_copy_int64(*loc);
+	loc = (int64_t *)(ptr_value(ptr_val) + Int_val(offset_val));
+	out_val = caml_copy_int64_t(*loc);
 	CAMLreturn(out_val);
 }
 
-CAMLprim void put_int32_caml(value ptr_val, value offset_val, value int32_val) {
-	CAMLparam3(ptr_val, offset_val, int32_val);
-	int32 *loc = (int32 *)(ptr_value(ptr_val) + Int_val(offset_val));
-	*loc = Int64_val(int32_val);
+CAMLprim void put_int32_t_caml(value ptr_val, value offset_val, value int32_t_val) {
+	CAMLparam3(ptr_val, offset_val, int32_t_val);
+	int32_t *loc = (int32_t *)(ptr_value(ptr_val) + Int_val(offset_val));
+	*loc = int64_t_val(int32_t_val);
 	CAMLreturn0;
 }
 
-CAMLprim value get_int32_caml(value ptr_val, value offset_val) {
+CAMLprim value get_int32_t_caml(value ptr_val, value offset_val) {
 	CAMLparam2(ptr_val, offset_val);
-	int32 *loc;
+	int32_t *loc;
 	CAMLlocal1(out_val);
 
-	loc = (int32 *)(ptr_value(ptr_val) + Int_val(offset_val));
-	out_val = caml_copy_int32(*loc);
+	loc = (int32_t *)(ptr_value(ptr_val) + Int_val(offset_val));
+	out_val = caml_copy_int32_t(*loc);
 	CAMLreturn(out_val);
 }
 
@@ -1050,36 +1050,36 @@ CAMLprim value get_8_to_int_caml(value ptr_val, value offset_val) {
 static __inline unsigned short bs16(unsigned short x) {
 	return ((x >> 8) | (x << 8));
 }
-static __inline uint32 bs32(uint32 x) {
+static __inline uint32_t bs32(uint32_t x) {
 	return ((bs16(x & 0xFFFF) << 16) | (bs16(x >> 16)));
 }
-static __inline uint64 bs64(uint64 x) {
-	return (((uint64)bs32(x & 0xFFFFFFFF) << 32) | (bs32(x >> 32)));
+static __inline uint64_t bs64(uint64_t x) {
+	return (((uint64_t)bs32(x & 0xFFFFFFFF) << 32) | (bs32(x >> 32)));
 }
 
-CAMLprim void put_int64_bs_caml(value ptr_val, value offset_val, value int64_val) {
-	CAMLparam3(ptr_val, offset_val, int64_val);
-	uint64 *loc = (uint64 *)(ptr_value(ptr_val) + Int_val(offset_val));
-	*loc = bs64(Int64_val(int64_val));
-//	printf("P: %p\n", bs64(Int64_val(int64_val)));
+CAMLprim void put_int64_t_bs_caml(value ptr_val, value offset_val, value int64_t_val) {
+	CAMLparam3(ptr_val, offset_val, int64_t_val);
+	uint64_t *loc = (uint64_t *)(ptr_value(ptr_val) + Int_val(offset_val));
+	*loc = bs64(int64_t_val(int64_t_val));
+//	printf("P: %p\n", bs64(int64_t_val(int64_t_val)));
 
 	CAMLreturn0;
 }
 
-CAMLprim value get_int64_bs_caml(value ptr_val, value offset_val) {
+CAMLprim value get_int64_t_bs_caml(value ptr_val, value offset_val) {
 	CAMLparam2(ptr_val, offset_val);
 	CAMLlocal1(out_val);
-	uint64 *loc = (uint64 *)(ptr_value(ptr_val) + Int_val(offset_val));
+	uint64_t *loc = (uint64_t *)(ptr_value(ptr_val) + Int_val(offset_val));
 
-	out_val = caml_copy_int64(bs64(*loc));
+	out_val = caml_copy_int64_t(bs64(*loc));
 
 	CAMLreturn(out_val);
 }
 
 CAMLprim void put_int_to_64_bs_caml(value ptr_val, value offset_val, value int_val) {
 	CAMLparam3(ptr_val, offset_val, int_val);
-	uint64 *loc = (uint64 *)(ptr_value(ptr_val) + Int_val(offset_val));
-	*loc = bs64((int64)Long_val(int_val));
+	uint64_t *loc = (uint64_t *)(ptr_value(ptr_val) + Int_val(offset_val));
+	*loc = bs64((int64_t)Long_val(int_val));
 	CAMLreturn0;
 }
 
@@ -1112,20 +1112,20 @@ CAMLprim value ptr_read_caml(value fd, value ptr, value ofs, value len) {
 	if(Descr_kind_val(fd) == KIND_SOCKET) {
 		int ret;
 		SOCKET s = Socket_val(fd);
-		enter_blocking_section();
+		caml_enter_blocking_section();
 		ret = recv(s, c, numbytes, 0);
 		if(ret == SOCKET_ERROR) {
 			err = WSAGetLastError();
 		}
-		leave_blocking_section();
+		caml_leave_blocking_section();
 		numread = ret;
 	} else {
 		HANDLE h = Handle_val(fd);
-		enter_blocking_section();
+		caml_enter_blocking_section();
 		if(!ReadFile(h, c, numbytes, &numread, NULL)) {
 			err = GetLastError();
 		}
-		leave_blocking_section();
+		caml_leave_blocking_section();
 	}
 	if(err) {
 		win32_maperr(err);
@@ -1140,9 +1140,9 @@ CAMLprim value ptr_read_caml(value fd, value ptr, value ofs, value len) {
 	int ret;
 	char *c = ptr_value(ptr) + Long_val(ofs);
 	numbytes = Long_val(len);
-	enter_blocking_section();
+	caml_enter_blocking_section();
 	ret = read(Int_val(fd), c, (int)numbytes);
-	leave_blocking_section();
+	caml_leave_blocking_section();
 	if(ret == -1) {
 		uerror("Ptr.read", Nothing);
 	}
@@ -1161,20 +1161,20 @@ CAMLprim value ptr_write_caml(value fd, value ptr, value ofs, value len) {
 	if(Descr_kind_val(fd) == KIND_SOCKET) {
 		int ret;
 		SOCKET s = Socket_val(fd);
-		enter_blocking_section();
+		caml_enter_blocking_section();
 		ret = send(s, c, numbytes, 0);
 		if(ret == SOCKET_ERROR) {
 			err = WSAGetLastError();
 		}
-		leave_blocking_section();
+		caml_leave_blocking_section();
 		numwrote = ret;
 	} else {
 		HANDLE h = Handle_val(fd);
-		enter_blocking_section();
+		caml_enter_blocking_section();
 		if(!WriteFile(h, c, numbytes, &numwrote, NULL)) {
 			err = GetLastError();
 		}
-		leave_blocking_section();
+		caml_leave_blocking_section();
 	}
 	if(err) {
 		win32_maperr(err);
@@ -1190,9 +1190,9 @@ CAMLprim value ptr_write_caml(value fd, value ptr, value ofs, value len) {
 	int ret;
 	char *c = ptr_value(ptr) + Long_val(ofs);
 	numbytes = Long_val(len);
-	enter_blocking_section();
+	caml_enter_blocking_section();
 	ret = write(Int_val(fd), c, (int)numbytes);
-	leave_blocking_section();
+	caml_leave_blocking_section();
 	if(ret == -1) {
 		uerror("Ptr.write", Nothing);
 	}

@@ -15,6 +15,7 @@
 	along with mp3packer; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 *******************************************************************************)
+open Bytes
 
 (* Unicode argv *)
 let argv = match Unicode.argv_opt with
@@ -45,23 +46,26 @@ let make_exception = function
 ;;
 
 let to_hex s =
-  let result = String.create (2 * String.length s) in
-  for i = 0 to String.length s - 1 do
-    String.blit (Printf.sprintf "%02X" (int_of_char s.[i])) 0 result (2*i) 2;
+  let slen = String.length s in
+  let result = Bytes.create (2 * slen) in
+  for i = 0 to slen - 1 do
+    (* Printf.sprintf returns a string, use Bytes.blit_string *)
+    Bytes.blit_string (Printf.sprintf "%02X" (int_of_char s.[i])) 0 result (2*i) 2;
   done;
-  result;;
+  Bytes.to_string result;;
 
 let to_bin =
 	let lookup = [| 128;64;32;16;8;4;2;1 |] in
 	fun s -> (
-		let result = String.create (8 * String.length s) in
+		let result = Bytes.create (8 * String.length s) in
 		for chr = 0 to String.length s - 1 do
 			let code = Char.code s.[chr] in
 			for bit = 0 to 7 do
-				result.[(chr lsl 3) lor bit] <- if (code land lookup.(bit) = 0) then '0' else '1'
+                (* use Bytes.set *)
+				Bytes.set result ((chr lsl 3) lor bit) (if (code land lookup.(bit) = 0) then '0' else '1')
 			done
 		done;
-		result
+		Bytes.to_string result
 	)
 ;;
 
@@ -304,9 +308,9 @@ type worker_ok_file_t = {
 (******)
 
 (* TEMP WINDOWS COUNTER *)
-external get_counter_freq : unit -> int = "c_part_counter_freq" "noalloc";;
+external get_counter_freq : unit -> int = "c_part_counter_freq" [@@noalloc];;
 let counter_freq = get_counter_freq ();;
-external counter : unit -> int = "c_part_counter" "noalloc";;
+external counter : unit -> int = "c_part_counter" [@@noalloc];;
 
 
 (* This function is not portable, but it won't be used with non-Windows OSes. That's what Unix.nice is for. *)
@@ -772,5 +776,3 @@ let padded_frame : type id. id samplerate_t -> int -> int -> bool =
 		| S12000 -> (fun _ _ -> false)
 		|  S8000 -> (fun _ _ -> false)
 ;;
-
-

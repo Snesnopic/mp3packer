@@ -48,13 +48,13 @@ class mp3write_unix ?(flags=[Unix.O_EXCL]) out_file =
 		inherit virt_mp3write
 
 		val handle = Unicode.openfile_utf8 out_file (Unix.O_WRONLY :: Unix.O_CREAT :: flags) 0o660
-		method output s r l = (
+		method output (s: bytes) r l = (
 			if l = 0 then () else (
 				let wrote = Unix.write handle s r l in
 				o#output s (r + wrote) (l - wrote)
 			)
 		)
-		method output_this s = o#output s 0 (String.length s)
+		method output_this (s: string) = o#output (Bytes.of_string s) 0 (String.length s)
 		method seek i = ignore (Unix.lseek handle i Unix.SEEK_SET)
 		method pos = Unix.lseek handle 0 Unix.SEEK_CUR
 		method close = Unix.close handle

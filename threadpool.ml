@@ -288,7 +288,7 @@ type ('a,'b) obj_slot_t = {
 };;
 
 let slot_is_done = function
-	| {slot_ret = None} -> false
+	| {slot_ret = None; _} -> false
 	| _ -> true
 ;;
 

@@ -53,10 +53,10 @@ const int max_quant_per_table[] = {0,1,2,2,-1,3,3,5,5,5,7,7,7,15,-1,15,16,18,22,
 const int linbits_per_table[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,3,4,6,8,10,13,4,5,6,7,8,9,11,13};
 
 
-uint32 sub_sat(uint32 x, uint32 y) {
-	uint32 z = x - y;
-	uint32 over = z >> 31;
-	uint32 mask = over - 1;
+uint32_t sub_sat(uint32_t x, uint32_t y) {
+	uint32_t z = x - y;
+	uint32_t over = z >> 31;
+	uint32_t mask = over - 1;
 //	printf("z=%08X over=%08X mask=%08X\n", z, over, mask);
 //	z ^= over;
 	return(z & mask);
@@ -64,7 +64,7 @@ uint32 sub_sat(uint32 x, uint32 y) {
 
 // This doesn't actually return the max, just a number which is guaranteed to have the same high-order bit
 // This is really all we need for calculating the proper linbit table
-uint32 max_with_sub15(uint32 so_far, uint32 q1, uint32 q2) {
+uint32_t max_with_sub15(uint32_t so_far, uint32_t q1, uint32_t q2) {
 	return(so_far | sub_sat(q1, 15) | sub_sat(q2, 15));
 }
 
@@ -119,7 +119,7 @@ CAMLprim value mfu_find_best_config_base(
 
 	if(debug) fflush(stdout);
 
-	enter_blocking_section();
+	caml_enter_blocking_section();
 
 	for(b = 0; b < num_scf_bands; b++) {
 		if(debug) printf("%2d:%-3d", b, scf_bands[b]);
@@ -132,8 +132,8 @@ CAMLprim value mfu_find_best_config_base(
 	}
 /*
 	for(t = 0; t < 8192; t++) {
-		uint32 x = sub_sat(t, 15);
-		uint32 y = (t > 15) ? (t - 15) : 0;
+		uint32_t x = sub_sat(t, 15);
+		uint32_t y = (t > 15) ? (t - 15) : 0;
 		if(x != y) printf("UNVALID! %d", t);
 	}
 */
@@ -256,7 +256,7 @@ CAMLprim value mfu_find_best_config_base(
 	for(b = 0; b <= MIN(REGION1_MAX_BANDS - 1, last_nonzero_band - 2); b++) {
 		int smallest_table = -1;
 		int smallest_bits = TOO_MANY_BITS;
-		uint32 largest_quant_sub15 = 0;
+		uint32_t largest_quant_sub15 = 0;
 		if(debug) printf("B = %d\n", b);
 		for(q = scf_bands[b]; q < scf_bands[b + 1]; q += 2) {
 			uint16_t *bits_here = quant_bits + Big_table_quant_index(0, quants[q], quants[q + 1]);
@@ -321,7 +321,7 @@ CAMLprim value mfu_find_best_config_base(
 		int smallest_bits = TOO_MANY_BITS;
 		int smallest_region1_length = 0;
 //		int largest_quant = 15;
-		uint32 largest_quant_sub15 = 0;
+		uint32_t largest_quant_sub15 = 0;
 		if(debug) printf("B2 = %d\n", b);
 		for(q = scf_bands[b]; q < scf_bands[b + 1]; q += 2) {
 			uint16_t *bits_here = quant_bits + Big_table_quant_index(0, quants[q], quants[q + 1]);
@@ -410,7 +410,7 @@ CAMLprim value mfu_find_best_config_base(
 		}
 	}
 	for(b = 0; b <= last_nonzero_band; b++) {
-		uint32 largest_quant_sub15 = 0;
+		uint32_t largest_quant_sub15 = 0;
 		if(debug) printf("B3 = %d\n", b);
 		for(q = scf_bands[b]; q < scf_bands[b + 1]; q += 2) {
 			uint16_t *bits_here = quant_bits + Big_table_quant_index(0, quants[q], quants[q + 1]);
@@ -504,7 +504,7 @@ CAMLprim value mfu_find_best_config_base(
 */
 //	printf("C_SAYS %d %d %d %d\n", last_nonzero_quant, last_nonzero_band, last_big_quant, last_big_band);
 
-	leave_blocking_section();
+	caml_leave_blocking_section();
 
 	// Now we have to collect the bigvalues and distribute them to the first regions
 	// (by default, if only one region is needed, it will have come out of the above algorithm as being the third region)
@@ -859,7 +859,7 @@ CAMLprim value mfu_find_best_config_sse41(
 		fflush(stdout);
 	}
 
-	enter_blocking_section();
+	caml_enter_blocking_section();
 
 	// Set the abs and min(15,abs) arrays
 	process_quants_ssse3(quants_full128, quants128, quants_raw128);
@@ -1021,7 +1021,7 @@ CAMLprim value mfu_find_best_config_sse41(
 		uint16_t smallest_total_bits_here;
 		uint16_t smallest_region2_table;
 		uint16_t smallest_region2_table_here;
-		uint32 largest_quant_sub15 = 0;
+		uint32_t largest_quant_sub15 = 0;
 		if(debug) printf("Band %d, quants %d-%d\n", b, scf_bands[b], scf_bands[b + 1] - 1);
 		for(q = scf_bands[b]; q < scf_bands[b + 1]; q += 2) {
 			table_vec *bits_here = quant_bits + Big_table_index(quants[q], quants[q + 1]);
@@ -1203,7 +1203,7 @@ CAMLprim value mfu_find_best_config_sse41(
 		final_possibility_region1_table = final_possibility_region2_table;
 	}
 
-	leave_blocking_section();
+	caml_leave_blocking_section();
 
 	out_val = caml_alloc_tuple(8);
 	Store_field(out_val, 0, Val_int(final_possibility_region0_bands - 1));
@@ -1257,7 +1257,7 @@ CAMLprim value mfu_find_best_config_sse41(
 	value quant_raw_ptr,
 	value debug_val
 ) {
-	return mfu_find_best_config(quant_bits_ptr, quant_bits_count1_char_ptr, scf_bands_ptr, quant_raw_ptr, debug_val);
+	return mfu_find_best_config_base(quant_bits_ptr, quant_bits_count1_char_ptr, scf_bands_ptr, quant_raw_ptr, debug_val);
 }
 
 #endif // WIN32

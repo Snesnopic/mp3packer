@@ -1,6 +1,6 @@
 type 'a t = Normal of 'a | Error of int;;
 
-external is_win : unit -> bool = "uni_is_win" "noalloc";;
+external is_win : unit -> bool = "uni_is_win" [@@noalloc];;
 let win = is_win ();;
 
 
@@ -40,7 +40,7 @@ let sprint_utf8 x8 = match active_of_utf8 x8 with
 (* the length value is in WCHARS, not bytes! *)
 (* Unsafe since the length is not checked *)
 external utf8_of_utf16_and_length_unsafe : string -> int -> string t = "uni_utf8_of_utf16_and_length";;
-let utf8_of_utf16 s = utf8_of_utf16_and_length_unsafe s (String.length s / 2);;
+(* let utf8_of_utf16 s = utf8_of_utf16_and_length_unsafe s (String.length s / 2);; *)
 
 
 external get_utf16_command_line : unit -> string t = "uni_get_utf16_command_line";;
