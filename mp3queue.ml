@@ -1597,6 +1597,7 @@ let do_queue recompress_obj state file_state (in_obj : Mp3read.mp3read_ptr_2) ou
 		let frac = int_of_float (float_of_int pos *. 256. /. (float_of_int total_bytes_written)) in
 		frac
 	) in
+	toc.(0) <- 0; (* players expect 0% to map to byte 0, not the xing frame's own offset *)
 
 	if debug_queue then (
 		let parse_toc f = Array.iter (fun x -> f (Hex (2,x))) toc in
