@@ -27,7 +27,7 @@ open Types;;
 
 
 
-let version = "2.04-268";;
+let version = "2.05-fork";;
 
 let padding = Printf.sprintf "mp3packer%s\n" version;;
 
