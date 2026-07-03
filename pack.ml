@@ -214,3 +214,111 @@ let packBits str offset num store =
 	done;
 	()
 ;;
+
+(*
+This version is from 1.16 and before. The new version optimizes reads for whole bytes, which makes it ~4% faster than this
+let unpackBitsOverflow inString offset num =
+	if num > 30 then raise (Failure "Number of bits to save to unpackBitsOverflow must be 30 or fewer");
+	let str_len_m1 = String.length inString - 1 in
+	let rec add_bit so_far current_offset num_left = (
+		if num_left = 0 then (
+			so_far
+		) else (
+			let byte = current_offset lsr 3 in
+			if byte > str_len_m1 then (
+				so_far lsl num_left
+			) else (
+				let code = Char.code inString.[byte] in
+				let bit = 7 - current_offset land 7 in
+				let add_me = (code land (1 lsl bit)) lsr bit in
+				add_bit ((so_far lsl 1) lor add_me) (succ current_offset) (pred num_left)
+			)
+		)
+	) in
+	add_bit 0 offset num
+;;
+*)
+
+(* Unpacks a bunch of bits, not necessarily aligned to byte boundaries. Overflowing the string will return as though it was padded with "0" bits *)
+(* Faster than the <1.16 safe version by about 32%! *)
+let unpackBitsOverflowUnsafe inString offset num =
+	let str_len_m1 = String.length inString - 1 in
+	let rec add_bit so_far current_offset num_left = (
+		if num_left = 0 then (
+			so_far
+		) else (
+			let byte = current_offset lsr 3 in
+			if byte > str_len_m1 then (
+				(* Overflow! *)
+				so_far lsl num_left
+			) else (
+				let code = Char.code inString.[byte] in
+				if current_offset land 7 = 0 then (
+					(* Byte boundary *)
+					if num_left = 8 then (
+						(so_far lsl num_left) lor code
+					) else if num_left < 8 then (
+						(* Shift right *)
+						(so_far lsl num_left) lor (code lsr (8 - num_left))
+					) else (
+						(* Shift left *)
+						add_bit ((so_far lsl 8) lor code) (current_offset + 8) (num_left - 8)
+					)
+				) else (
+					(* Actually do stuff *)
+					let bit = 7 - current_offset land 7 in
+					let add_me = (code land (1 lsl bit)) lsr bit in
+					add_bit ((so_far lsl 1) lor add_me) (succ current_offset) (pred num_left)
+				)
+			)
+		)
+	) in
+	add_bit 0 offset num
+;;
+
+let unpackBitsOverflow inString offset num = (
+	if num > 30 then raise (Failure "Number of bits to save to unpackBitsOverflow must be 30 or fewer");
+	unpackBitsOverflowUnsafe inString offset num
+);;
+
+
+(* A simple, kind-of-imperative method for keeping track of which bit we're on *)
+let read_bits (str, on_bits) num_bits =
+(*	if debug then Printf.printf "Reading %d bits from %d on %S\n" num_bits on_bits (to_bin str);*)
+	try
+		if num_bits = 0 then (
+			(0, (str, on_bits))
+		) else (
+			((unpackBits str on_bits num_bits), (str, on_bits + num_bits))
+		)
+	with
+		_ -> raise (Failure "read_bits")
+;;
+
+let write_bits (str, on_bits) num_bits store =
+(*	if debug then Printf.printf "Reading %d bits from %d on %S\n" num_bits on_bits (to_bin str);*)
+	if num_bits = 0 then (
+		(str, on_bits)
+	) else (
+		packBits str on_bits num_bits store;
+		(str, on_bits + num_bits)
+	)
+;;
+
+(* A simple, kind-of-imperative method for keeping track of which bit we're on *)
+let read_bits_overflow_unsafe (str, on_bits) num_bits =
+(*	if debug then Printf.printf "Reading %d bits from %d on %S\n" num_bits on_bits (to_bin str);*)
+	if num_bits = 0 then (
+		(0, (str, on_bits))
+	) else (
+		((unpackBitsOverflowUnsafe str on_bits num_bits), (str, on_bits + num_bits))
+	)
+;;
+let read_bits_overflow (str, on_bits) num_bits =
+(*	if debug then Printf.printf "Reading %d bits from %d on %S\n" num_bits on_bits (to_bin str);*)
+	if num_bits = 0 then (
+		(0, (str, on_bits))
+	) else (
+		((unpackBitsOverflow str on_bits num_bits), (str, on_bits + num_bits))
+	)
+;;
