@@ -66,7 +66,7 @@ CAMLprim value uni_utf16_of_utf8(value utf8_val, value include_null) {
 	CAMLparam2(utf8_val, include_null);
 	int err = 0;
 	// Every OCaml string is null-terminated, so it's safe to add 1 to the length
-	long utf8_len = Bool_val(include_null) ? string_length(utf8_val) + 1 : string_length(utf8_val);
+	long utf8_len = Bool_val(include_null) ? caml_string_length(utf8_val) + 1 : caml_string_length(utf8_val);
 	CAMLlocal2(unicode_val, out_val);
 
 	if(utf8_len == 0) {
@@ -94,7 +94,7 @@ CAMLprim value uni_utf8_of_utf16(value byte_len_val, value unicode_val) {
 	int len = Int_val(byte_len_val) / sizeof(WCHAR);
 	CAMLlocal2(utf8_val, out_val);
 
-	if(string_length(unicode_val) < sizeof(WCHAR)) {
+	if(caml_string_length(unicode_val) < sizeof(WCHAR)) {
 		utf8_val = caml_alloc_string(0);
 	} else {
 		int needed = WideCharToMultiByte(CP_UTF8, 0, (LPCWSTR)String_val(unicode_val), len, NULL, 0, NULL, NULL);
@@ -103,7 +103,7 @@ CAMLprim value uni_utf8_of_utf16(value byte_len_val, value unicode_val) {
 		} else {
 			int n2;
 			utf8_val = caml_alloc_string(needed);
-			n2 = WideCharToMultiByte(CP_UTF8, 0, (LPCWSTR)String_val(unicode_val), len, String_val(utf8_val), needed, NULL, NULL);
+			n2 = WideCharToMultiByte(CP_UTF8, 0, (LPCWSTR)String_val(unicode_val), len, (char *)String_val(utf8_val), needed, NULL, NULL);
 			if(n2 == 0) {
 				err = GetLastError();
 			}
@@ -121,7 +121,7 @@ CAMLprim value uni_active_of_utf16(value byte_len_val, value unicode_val) {
 
 	printf("ACP: %d\n", GetACP());
 
-	if(string_length(unicode_val) < sizeof(WCHAR)) {
+	if(caml_string_length(unicode_val) < sizeof(WCHAR)) {
 		utf8_val = caml_alloc_string(0);
 	} else {
 		int needed = WideCharToMultiByte(GetACP(), 0, (LPCWSTR)String_val(unicode_val), len, NULL, 0, NULL, NULL);
@@ -130,7 +130,7 @@ CAMLprim value uni_active_of_utf16(value byte_len_val, value unicode_val) {
 		} else {
 			int n2;
 			utf8_val = caml_alloc_string(needed);
-			n2 = WideCharToMultiByte(GetACP(), 0, (LPCWSTR)String_val(unicode_val), len, String_val(utf8_val), needed, NULL, NULL);
+			n2 = WideCharToMultiByte(GetACP(), 0, (LPCWSTR)String_val(unicode_val), len, (char *)String_val(utf8_val), needed, NULL, NULL);
 			if(n2 == 0) {
 				err = GetLastError();
 			}
@@ -156,7 +156,7 @@ CAMLprim value uni_utf8_of_utf16_and_length(value unicode_val, value len_val) {
 		} else {
 			int n2;
 			utf8_val = caml_alloc_string(needed);
-			n2 = WideCharToMultiByte(CP_UTF8, 0, (LPCWSTR)String_val(unicode_val), len_in_wchars, String_val(utf8_val), needed, NULL, NULL);
+			n2 = WideCharToMultiByte(CP_UTF8, 0, (LPCWSTR)String_val(unicode_val), len_in_wchars, (char *)String_val(utf8_val), needed, NULL, NULL);
 			if(n2 == 0) {
 				err = GetLastError();
 			}
@@ -176,7 +176,7 @@ CAMLprim value uni_get_utf16_command_line() {
 		err = GetLastError();
 	} else {
 		str_val = caml_alloc_string(needed);
-		memcpy(String_val(str_val), com_str, needed);
+		memcpy((char *)String_val(str_val), com_str, needed);
 	}
 	win_error(out_val, str_val, err);
 	CAMLreturn(out_val);
@@ -187,7 +187,6 @@ CAMLprim value uni_get_utf8_argv() {
 	CAMLlocal3(str_val, array_val, out_val);
 
 	int num_args;
-	int needed;
 	int err = 0;
 	LPWSTR com_str = GetCommandLineW();
 
@@ -212,7 +211,7 @@ CAMLprim value uni_get_utf8_argv() {
 				// WideCharToMultiByte with -1 returns the terminating null char as well
 				// Luckily OCaml allocates a terminating null after any string
 				str_val = caml_alloc_string(needed - 1);
-				needed = WideCharToMultiByte(CP_UTF8, 0, str, -1, String_val(str_val), needed, NULL, NULL);
+				needed = WideCharToMultiByte(CP_UTF8, 0, str, -1, (char *)String_val(str_val), needed, NULL, NULL);
 //				printf("needed2 = %d\n", needed);
 				if(needed == 0) {
 					err = GetLastError();
@@ -247,9 +246,9 @@ CAMLprim value uni_openfile_utf16(value path, value flags, value perm)
   SECURITY_ATTRIBUTES attr;
   HANDLE h;
 
-  fileaccess = convert_flag_list(flags, open_access_flags);
+  fileaccess = caml_convert_flag_list(flags, open_access_flags);
 
-  createflags = convert_flag_list(flags, open_create_flags);
+  createflags = caml_convert_flag_list(flags, open_create_flags);
   if ((createflags & (O_CREAT | O_EXCL)) == (O_CREAT | O_EXCL))
     filecreate = CREATE_NEW;
   else if ((createflags & (O_CREAT | O_TRUNC)) == (O_CREAT | O_TRUNC))
@@ -298,7 +297,7 @@ CAMLprim value uni_readdir_find_first_file_utf16(value name_val) {
 		size_t str_len = wcslen(f.cFileName) + 1; // include the null
 		tuple_val = caml_alloc_tuple(2);
 		out_str_val = caml_alloc_string(str_len * sizeof(WCHAR));
-		memcpy(String_val(out_str_val), f.cFileName, str_len * sizeof(WCHAR));
+		memcpy((char *)String_val(out_str_val), f.cFileName, str_len * sizeof(WCHAR));
 		Store_field(tuple_val, 0, win_alloc_handle(handle));
 		Store_field(tuple_val, 1, out_str_val);
 		win_good(out_val, tuple_val);
@@ -316,7 +315,7 @@ CAMLprim value uni_readdir_find_next_file_utf16(value handle_val) {
 	if(FindNextFileW(handle, &f)) {
 		size_t str_len = wcslen(f.cFileName) + 1;
 		out_str_val = caml_alloc_string(str_len * sizeof(WCHAR));
-		memcpy(String_val(out_str_val), f.cFileName, str_len * sizeof(WCHAR));
+		memcpy((char *)String_val(out_str_val), f.cFileName, str_len * sizeof(WCHAR));
 		win_good(out_val, out_str_val);
 	} else {
 		err = GetLastError();
@@ -360,6 +359,12 @@ static int file_kind_table[] = {
   S_IFREG, S_IFDIR, S_IFCHR, S_IFBLK, S_IFLNK, S_IFIFO, S_IFSOCK
 };
 
+static value my_cst_to_constr(int n, int * tbl, int size, int deflt) {
+    for (int i = 0; i < size; i++)
+        if (n == tbl[i]) return Val_int(i);
+    return Val_int(deflt);
+}
+
 CAMLprim value uni_stat_utf16(value name_val) {
 	CAMLparam1(name_val);
 	struct _stati64 buf;
@@ -377,16 +382,16 @@ CAMLprim value uni_stat_utf16(value name_val) {
 		tuple_val = caml_alloc_tuple(12);
 		Store_field(tuple_val,  0, Val_int(buf.st_dev));
 		Store_field(tuple_val,  1, Val_int(buf.st_ino));
-		Store_field(tuple_val,  2, cst_to_constr(buf.st_mode & S_IFMT, file_kind_table, sizeof(file_kind_table) / sizeof(int), 0));
+		Store_field(tuple_val,  2, my_cst_to_constr(buf.st_mode & S_IFMT, file_kind_table, sizeof(file_kind_table) / sizeof(int), 0));
 		Store_field(tuple_val,  3, Val_int(buf.st_mode & 07777));
 		Store_field(tuple_val,  4, Val_int(buf.st_nlink));
 		Store_field(tuple_val,  5, Val_int(buf.st_uid));
 		Store_field(tuple_val,  6, Val_int(buf.st_gid));
 		Store_field(tuple_val,  7, Val_int(buf.st_rdev));
 		Store_field(tuple_val,  8, Val_int(buf.st_size)); // no int64_t version
-		Store_field(tuple_val,  9, copy_double((double)buf.st_atime));
-		Store_field(tuple_val, 10, copy_double((double)buf.st_mtime));
-		Store_field(tuple_val, 11, copy_double((double)buf.st_ctime));
+		Store_field(tuple_val,  9, caml_copy_double((double)buf.st_atime));
+		Store_field(tuple_val, 10, caml_copy_double((double)buf.st_mtime));
+		Store_field(tuple_val, 11, caml_copy_double((double)buf.st_ctime));
 		win_good(out_val, tuple_val);
 	}
 	CAMLreturn(out_val);
@@ -437,7 +442,6 @@ CAMLprim value uni_rename_utf16(value path1, value path2)
 CAMLprim value uni_remove_utf16(value name_val) {
 	CAMLparam1(name_val);
 	CAMLlocal1(out_val);
-	int err = 0;
 	if(!DeleteFileW((wchar_t *)String_val(name_val))) {
 		win_bad(out_val, GetLastError());
 	} else {

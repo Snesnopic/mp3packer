@@ -319,35 +319,35 @@ let scalefactor_bands_m2 is gc =
 	if is then (
 		if gc.gc_scf_compress_index < 360 then (
 			match gc with
-			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = true}}  -> (6,15,12,0)
-			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = false}} -> (12,12,12,0)
+			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = true; _}; _}  -> (6,15,12,0)
+			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = false; _}; _} -> (12,12,12,0)
 			| _ ->                                                                                           (7,7,7,0)
 		) else if gc.gc_scf_compress_index < 488 then (
 			match gc with
-			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = true}}  -> (6,12,9,6)
-			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = false}} -> (12,9,9,6)
+			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = true; _}; _}  -> (6,12,9,6)
+			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = false; _}; _} -> (12,9,9,6)
 			| _ ->                                                                                           (6,6,6,3)
 		) else (
 			match gc with
-			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = true}}  -> (6,18,9,0)
-			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = false}} -> (15,12,9,0)
+			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = true; _}; _}  -> (6,18,9,0)
+			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = false; _}; _} -> (15,12,9,0)
 			| _ ->                                                                                           (8,8,5,0)
 		)
 	) else (
 		if gc.gc_scf_compress_index < 400 then (
 			match gc with
-			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = true}}  -> (6,9,9,9)
-			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = false}} -> (9,9,9,9)
+			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = true; _}; _}  -> (6,9,9,9)
+			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = false; _}; _} -> (9,9,9,9)
 			| _ ->                                                                                           (6,5,5,5)
 		) else if gc.gc_scf_compress_index < 500 then (
 			match gc with
-			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = true}}  -> (6,9,12,6)
-			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = false}} -> (9,9,12,6)
+			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = true; _}; _}  -> (6,9,12,6)
+			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = false; _}; _} -> (9,9,12,6)
 			| _ ->                                                                                           (6,5,7,3)
 		) else (
 			match gc with
-			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = true}}  -> (15,18,0,0)
-			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = false}} -> (18,18,0,0)
+			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = true; _}; _}  -> (15,18,0,0)
+			| {gc_window = Window_other {other_block_type = Block_type_short; other_mixed_block = false; _}; _} -> (18,18,0,0)
 			| _ ->                                                                                           (11,10,0,0)
 		)
 	)
@@ -1071,15 +1071,15 @@ let decode_frame : type id chan. _ -> _ -> (id,chan) f1_t -> (id,chan) frame_dat
 
 	let replace_side_info : type id chan. (id,chan) side_internal_t -> (id,chan) side_gc_selector_t -> (id,chan) side_internal_t = fun s r ->
 		match s with
-		| {side_gc = GC_1_mono _} -> {s with side_gc = r}
-		| {side_gc = GC_1_stereo _} -> {s with side_gc = r}
-		| {side_gc = GC_2_mono _} -> {s with side_gc = r}
-		| {side_gc = GC_2_stereo _} -> {s with side_gc = r}
+		| {side_gc = GC_1_mono _; _} -> {s with side_gc = r}
+		| {side_gc = GC_1_stereo _; _} -> {s with side_gc = r}
+		| {side_gc = GC_2_mono _; _} -> {s with side_gc = r}
+		| {side_gc = GC_2_stereo _; _} -> {s with side_gc = r}
 	in
 (*	let update_frame_data : type id chan. (id,chan) Types.Types2.f1_t -> (id,chan) side_gc_selector_t -> ( *)
 
 	match f.f1_header(*(f.f1_header.header_id, f.f1_header.header_channel_mode)*) with
-	| {header_id = MPEG1; header_channel_mode = Mono}(*(MPEG1, Mono)*) -> (
+	| {header_id = MPEG1; header_channel_mode = Mono; _}(*(MPEG1, Mono)*) -> (
 		p [Str "DECODE FRAME "; Int f.f1_num; Str " (MPEG1, MONO)"];
 		p [Str "  Side "; Ptrref f.f1_side.side_raw];
 		p [Str "  Data "; Ptrref f.f1_data];
@@ -1123,7 +1123,7 @@ let decode_frame : type id chan. _ -> _ -> (id,chan) f1_t -> (id,chan) frame_dat
 			error0 || error1
 		)
 	)
-	| {header_id = MPEG1; header_channel_mode = Stereo _}(*(MPEG1, Stereo _)*) -> (
+	| {header_id = MPEG1; header_channel_mode = Stereo _; _}(*(MPEG1, Stereo _)*) -> (
 		p [Str "DECODE FRAME "; Int f.f1_num; Str " (MPEG1, STEREO)"];
 		p [Str "  Side "; Ptrref f.f1_side.side_raw];
 		p [Str "  Data "; Ptrref f.f1_data];
@@ -1178,7 +1178,7 @@ let decode_frame : type id chan. _ -> _ -> (id,chan) f1_t -> (id,chan) frame_dat
 			error00 || error01 || error10 || error11
 		)
 	)
-	| {header_id = MPEG2 _; header_channel_mode = Mono}(*(MPEG2 _, Mono)*) -> (
+	| {header_id = MPEG2 _; header_channel_mode = Mono; _}(*(MPEG2 _, Mono)*) -> (
 		p [Str "DECODE FRAME "; Int f.f1_num; Str " (MPEG2, MONO)"];
 		p [Str "  Side "; Ptrref f.f1_side.side_raw];
 		p [Str "  Data "; Ptrref f.f1_data];
@@ -1210,7 +1210,7 @@ let decode_frame : type id chan. _ -> _ -> (id,chan) f1_t -> (id,chan) frame_dat
 			error
 		)
 	)
-	| {header_id = MPEG2 _; header_channel_mode = Stereo _}(*(MPEG2 _, Stereo _)*) -> (
+	| {header_id = MPEG2 _; header_channel_mode = Stereo _; _}(*(MPEG2 _, Stereo _)*) -> (
 		p [Str "DECODE FRAME "; Int f.f1_num; Str " (MPEG2, STEREO)"];
 		p [Str "  Side "; Ptrref f.f1_side.side_raw];
 		p [Str "  Data "; Ptrref f.f1_data];
@@ -1233,7 +1233,7 @@ let decode_frame : type id chan. _ -> _ -> (id,chan) f1_t -> (id,chan) frame_dat
 		let gc0 = rehuff_granule state qp0 gc0 scf_bands_ptr in
 
 		let is_is = match f.f1_header.header_channel_mode with
-			| Stereo Stereo_joint {js_is = is} -> is
+			| Stereo Stereo_joint {js_is = is; _} -> is
 			| _ -> false
 		in
 
@@ -1450,7 +1450,7 @@ let encode_frame : type id chan. _ -> (id,chan) frame_data_t -> (id,chan) f1_t =
 
 
 	match d with
-	| M1_frame_data ({m1_header = {header_channel_mode = Mono}} as m) -> (
+	| M1_frame_data ({m1_header = {header_channel_mode = Mono; _}; _} as m) -> (
 		(* MONO MPEG1 *)
 		let k = m.m1_header in
 
@@ -1548,7 +1548,7 @@ let encode_frame : type id chan. _ -> (id,chan) frame_data_t -> (id,chan) f1_t =
 			f1_pad_exact = None;
 		}
 	)
-	| M1_frame_data ({m1_header = {header_channel_mode = Stereo _}} as m) -> (
+	| M1_frame_data ({m1_header = {header_channel_mode = Stereo _; _}; _} as m) -> (
 		(* STEREO MPEG1 *)
 		let k = m.m1_header in
 
@@ -1662,7 +1662,7 @@ let encode_frame : type id chan. _ -> (id,chan) frame_data_t -> (id,chan) f1_t =
 			f1_pad_exact = None;
 		}
 	)
-	| M2_frame_data ({m2_header = {header_channel_mode = Mono}} as m) -> (
+	| M2_frame_data ({m2_header = {header_channel_mode = Mono; _}; _} as m) -> (
 		
 		let k = m.m2_header in
 
@@ -1743,7 +1743,7 @@ let encode_frame : type id chan. _ -> (id,chan) frame_data_t -> (id,chan) f1_t =
 			f1_pad_exact = None;
 		}
 	)
-	| M2_frame_data ({m2_header = {header_channel_mode = Stereo _}} as m) -> (
+	| M2_frame_data ({m2_header = {header_channel_mode = Stereo _; _}; _} as m) -> (
 		let k = m.m2_header in
 
 		(* 1441 bytes per frame (8khz, 160kbps, padded) - 4 byte header - 17 byte side + 255 byte reservoir *)
@@ -1762,7 +1762,7 @@ let encode_frame : type id chan. _ -> (id,chan) frame_data_t -> (id,chan) f1_t =
 			| _ -> failwith "Impossible: M2_quantizers_stereo expected in encode_frame"
 		in
 		let is_is = match m.m2_header.header_channel_mode with
-			| Stereo Stereo_joint {js_is = is} -> is
+			| Stereo Stereo_joint {js_is = is; _} -> is
 			| _ -> false
 		in
 

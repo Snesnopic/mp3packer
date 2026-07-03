@@ -22,6 +22,54 @@
 #define HAS_BYTESWAP 1
 #endif
 
+static void ptr_finalize(value v) {
+	struct ptr_struct *p = Struct_val(v);
+	switch (p->type) {
+		case PTR_MALLOC:
+			free(p->alloc_begin);
+			break;
+		case PTR_MMAP:
+#ifdef _WIN32
+			UnmapViewOfFile(p->alloc_begin);
+			break;
+#else
+			munmap(p->alloc_begin, p->length);
+			break;
+#endif
+		case PTR_VIRTUALALLOC:
+#ifdef _WIN32
+			VirtualFree(p->alloc_begin, 0, MEM_RELEASE);
+			break;
+#else
+			break;
+#endif
+		case PTR_NULL:
+			break;
+	}
+}
+
+
+/* COMPARE */
+static int ptr_compare(value a_val, value b_val) {
+	int len_a = Length_val(a_val);
+	int len_b = Length_val(b_val);
+
+	if(len_a != len_b) {
+		return((len_a < len_b) - (len_b < len_a));
+	} else {
+		return(memcmp(Begin_val(a_val), Begin_val(b_val), len_a));
+	}
+}
+
+static struct custom_operations generic_ptr_opts = {
+	"c_ptr",
+	ptr_finalize,
+	ptr_compare/*custom_compare_default*/,
+	custom_hash_default,
+	custom_serialize_default,
+	custom_deserialize_default
+};
+
 
 /*
  * This is a new style for ptrs: the custom ptr points to a ptr_struct struct
@@ -176,7 +224,7 @@ CAMLprim void ptr_blit(value from_val, value from_off_val, value to_val, value t
 
 CAMLprim void ptr_blit_from_string(value str_val, value str_off_val, value ptr_val, value ptr_off_val, value len_val) {
 //	CAMLparam5(str_val, str_off_val, ptr_val, ptr_off_val, len_val);
-	char *s = String_val(str_val) + Long_val(str_off_val);
+	const char *s = String_val(str_val) + Long_val(str_off_val);
 	char *p = Begin_val(ptr_val) + Long_val(ptr_off_val);
 	size_t l = Long_val(len_val);
 	memmove(p, s, l);
@@ -186,7 +234,7 @@ CAMLprim void ptr_blit_from_string(value str_val, value str_off_val, value ptr_v
 CAMLprim void ptr_blit_to_string(value ptr_val, value ptr_off_val, value str_val, value str_off_val, value len_val) {
 //	CAMLparam5(ptr_val, ptr_off_val, str_val, str_off_val, len_val);
 	char *p = Begin_val(ptr_val) + Long_val(ptr_off_val);
-	char *s = String_val(str_val) + Long_val(str_off_val);
+	char *s = (char *)String_val(str_val) + Long_val(str_off_val);
 	size_t l = Long_val(len_val);
 //	printf("Moving %d from %p to %p\n", l, p, s);
 	memmove(s, p, l);
@@ -858,7 +906,7 @@ CAMLprim value aligned_to_mask_caml(value mask_val, value ptr_val) {
 void ptr_of_string_caml(value str, value ptr) {
 	CAMLparam2(str, ptr);
 	char *p = ptr_value(ptr);
-	char *s = String_val(str);
+	const char *s = String_val(str);
 	size_t l = Long_val(ptr_size(ptr));
 //	printf("%p -> %p (%d)\n", s, p, l);
 //	fflush(stdout);
@@ -868,7 +916,7 @@ void ptr_of_string_caml(value str, value ptr) {
 
 void string_of_ptr_caml(value ptr, value str) {
 	CAMLparam2(ptr, str);
-	memmove(String_val(str), ptr_value(ptr), string_length(str));
+	memmove((char *)String_val(str), ptr_value(ptr), string_length(str));
 	CAMLreturn0;
 }
 
@@ -949,7 +997,7 @@ CAMLprim void blit_from_string_caml(value str_val, value str_off_val, value ptr_
 
 CAMLprim void blit_to_string_caml(value ptr_val, value ptr_off_val, value str_val, value str_off_val, value len_val) {
 	CAMLparam5(str_val, str_off_val, ptr_val, ptr_off_val, len_val);
-	memmove(String_val(str_val) + Int_val(str_off_val), ptr_value(ptr_val) + Int_val(ptr_off_val), Int_val(len_val));
+	memmove((char *)String_val(str_val) + Int_val(str_off_val), ptr_value(ptr_val) + Int_val(ptr_off_val), Int_val(len_val));
 	CAMLreturn0;
 }
 

@@ -8,17 +8,22 @@
 #include <caml/unixsupport.h>
 
 #if defined(__WIN32__) || defined(WIN32) || defined(_WIN32)
+#ifndef WIN32
 #define WIN32
+#endif
 #endif
 
 #include <stdio.h>
 
 #if defined(WIN32)
 #include <windows.h>
+#include <intrin.h>
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <pthread.h>
+#include <signal.h>
 #endif
 
 
@@ -132,11 +137,11 @@ CAMLprim value caml_nice(value val_niceness)
 
 CAMLprim value get_capabilities() {
 	CAMLparam0();
-	int info[4];
-	int max_eax;
 	CAMLlocal1(out_val);
 	out_val = caml_alloc_tuple(5);
 #if defined(WIN32)
+	int info[4];
+	int max_eax;
 	__cpuid(info, 0);
 	max_eax = info[0];
 	if(max_eax >= 1) {
@@ -206,7 +211,8 @@ CAMLprim value thread_is_alive(value thread_id_val) {
 		caml_failwith("Can't get status of thread");
 	}
 #else
-	int thread_id = Int_val(thread_id_val);
+	pthread_t thread_id = (pthread_t)(uintptr_t)Int_val(thread_id_val);
+	still_alive = (pthread_kill(thread_id, 0) == 0);
 #endif
 	CAMLreturn(Val_bool(still_alive));
 }

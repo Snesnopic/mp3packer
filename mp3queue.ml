@@ -19,7 +19,7 @@
 open Types;;
 open Mp3read;;
 open Pack;;
-open Bytes (* needed for bytes manipulation *)
+
 
 (*
 let t1_ref = ref (counter ());;
@@ -149,7 +149,7 @@ let bit_blit =
 let side_info_find_ok :
 	type id chan. bool -> (id,chan) side_t -> Ptr.Ref.ref_t -> int -> (id,chan) side_t * Ptr.Ref.ref_t * bool
 = fun zero_whole_bad_frame -> function
-	| {side_bits = Bits_1_mono (a,b)} as input_side -> (fun reservoir input_offset ->
+	| {side_bits = Bits_1_mono (a,b); _} as input_side -> (fun reservoir input_offset ->
 		let first_bit = input_offset lsl 3 in (* The offset in bits *)
 		let second_bit = first_bit + a in     (* The first bit of the second granule *)
 		let last_bit = second_bit + b in      (* The first bit after the second granule *)
@@ -215,7 +215,7 @@ let side_info_find_ok :
 		) in
 		(output_side, output_data, first_granule_ok && second_granule_ok)
 	)
-	| {side_bits = Bits_1_stereo (a,b,c,d)} as input_side -> (fun reservoir input_offset ->
+	| {side_bits = Bits_1_stereo (a,b,c,d); _} as input_side -> (fun reservoir input_offset ->
 		let first_bit = input_offset lsl 3 in
 		let second_bit = first_bit + a + b in
 		let last_bit = second_bit + c + d in
@@ -279,7 +279,7 @@ let side_info_find_ok :
 		) in
 		(output_side, output_data, first_granule_ok && second_granule_ok)
 	)
-	| {side_bits = Bits_2_mono a} as input_side -> (fun reservoir input_offset ->
+	| {side_bits = Bits_2_mono a; _} as input_side -> (fun reservoir input_offset ->
 		let first_bit = input_offset lsl 3 in
 		let last_bit = first_bit + a in
 		let reservoir_length_in_bits = Ptr.Ref.length reservoir lsl 3 in
@@ -322,7 +322,7 @@ let side_info_find_ok :
 		) in
 		(output_side, output_data, granule_ok)
 	)
-	| {side_bits = Bits_2_stereo (a,b)} as input_side -> (fun reservoir input_offset ->
+	| {side_bits = Bits_2_stereo (a,b); _} as input_side -> (fun reservoir input_offset ->
 		let first_bit = input_offset lsl 3 in
 		let last_bit = first_bit + a + b in
 		let reservoir_length_in_bits = Ptr.Ref.length reservoir lsl 3 in
@@ -414,7 +414,7 @@ let do_queue recompress_obj state file_state (in_obj : Mp3read.mp3read_ptr_2) ou
 *)
 
 	(* Sync to first frame *)
-	let (new_req, IF_ext first_frame, (first_wanted_at, first_got_at), in_xing_option) = (
+	let (new_req, IF_ext first_frame, (_, first_got_at), in_xing_option) = (
 		let before_lame_reqs = {
 			req_id            = Req_equal;
 			req_crc           = Req_any;
@@ -441,7 +441,7 @@ let do_queue recompress_obj state file_state (in_obj : Mp3read.mp3read_ptr_2) ou
 			req_original      = Req_any;   (* Req_equal has had some problems in the past *)
 			req_emphasis      = Req_any;
 		} in
-		let (first_req, IF_ext first_frame, (_ (* 0 *), first_got)) = in_obj#find_next_frame ~force_resync:true ~lame_search:true before_lame_reqs in
+		let (_, IF_ext first_frame, (_ (* 0 *), first_got)) = in_obj#find_next_frame ~force_resync:true ~lame_search:true before_lame_reqs in
 		match first_frame.if_xing with
 		| None -> (
 			(* The first frame was NOT an XING frame; restart and use more strict after_lame_reqs *)
@@ -534,7 +534,7 @@ let do_queue recompress_obj state file_state (in_obj : Mp3read.mp3read_ptr_2) ou
 	) in
 
 	(* Returns a valid header given the bitrate info, common settings, and stereo mode *)
-	let (bitrate_to_header_string, bitrate_to_header) = (
+	let (_, bitrate_to_header) = (
         let template = Bytes.of_string "\xFF\xFF\xFF\xFF" in
         (* moved pack_head calls inside the closure *)
 
@@ -711,7 +711,7 @@ let do_queue recompress_obj state file_state (in_obj : Mp3read.mp3read_ptr_2) ou
 			| None -> false
 			| Some xing -> (match xing.xingLame with
 				| None -> false
-				| Some lame -> true
+				| Some _ -> true
 			)
 		) in
 		let min_lame_bitrate = bytes_to_bitrate (if is_lame then 156 else 140) in
@@ -801,11 +801,7 @@ let do_queue recompress_obj state file_state (in_obj : Mp3read.mp3read_ptr_2) ou
 	let q3_bytes_ref = ref 0 in (* The number of bytes currently in Q3 *)
 	let q3_current_reservoir_ref = ref 0 in (* The current byte reservoir in Q3. Although this is implied through the Q2 list, it must be explicitly set if Q2 is not used (minimize_bit_reservoir = false) *)
 
-	(************)
-	(************)
-	(** QUEUE! **)
-	(************)
-	(************)
+	(* QUEUE! *)
 	let rec input_to_q0 frame_num update_percent bit_reservoir_so_far bit_reservoir_so_far_unused = (
 		(* XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX *)
 		(* Same as A but add to Q0 instead *)
@@ -938,7 +934,7 @@ let do_queue recompress_obj state file_state (in_obj : Mp3read.mp3read_ptr_2) ou
 			let (F1_ext orig, put_token) = List2.take_first q0 in
 			p [Str " requesting frame from Q0"];
 			(match recompress_obj#recv put_token with
-				| Normal (F1_ext new_f1, q_error) -> (
+				| Normal (F1_ext new_f1, _) -> (
 					if Ptr.Ref.length new_f1.f1_data > Ptr.Ref.length orig.f1_data then (
 						p [
 							Str " Oops. The repacked frame is larger than the original (";
@@ -976,7 +972,7 @@ let do_queue recompress_obj state file_state (in_obj : Mp3read.mp3read_ptr_2) ou
 		| Some ((F1_ext orig), put_token) -> (
 			p [Str " requesting frame from Q0"];
 			match recompress_obj#recv put_token with
-			| Normal ((F1_ext new_f1), q_error) -> (
+			| Normal ((F1_ext new_f1), _) -> (
 				if Ptr.Ref.length new_f1.f1_data > Ptr.Ref.length orig.f1_data then (
 					p [
 						Str " Oops. The repacked frame is larger than the original (";
@@ -1132,7 +1128,7 @@ let do_queue recompress_obj state file_state (in_obj : Mp3read.mp3read_ptr_2) ou
 		(* Check the first frame to see if anything was actually done *)
 		let marked = (
 			if List2.is_empty q1 then false else match List2.peek_first q1 with
-			| F1_ext {f1_pad_exact = None} -> false
+			| F1_ext {f1_pad_exact = None; _} -> false
 			| _ -> true
 		) in
 
@@ -1236,7 +1232,7 @@ let do_queue recompress_obj state file_state (in_obj : Mp3read.mp3read_ptr_2) ou
 		| Some pad -> (
 			let F1_ext f1 = List2.take_first q1 in
 
-			let (bytes_to_store, prev_padding) = (Ptr.Ref.length f1.f1_data + pad - !q3_current_reservoir_ref, !q3_current_reservoir_ref) in
+			let (bytes_to_store, _) = (Ptr.Ref.length f1.f1_data + pad - !q3_current_reservoir_ref, !q3_current_reservoir_ref) in
 
 			let bitrate_optimal = bytes_to_bitrate bytes_to_store in
 			let bitrate_minimum = min_bitrate_now f1.f1_num in
@@ -1367,7 +1363,7 @@ let do_queue recompress_obj state file_state (in_obj : Mp3read.mp3read_ptr_2) ou
 		(* Is there any more to copy? *)
 		let copy_stuff = match List2.peek_first_perhaps q2 with
 			| None -> false
-			| Some (F2_ext {f2_flag = f}) -> f
+			| Some (F2_ext {f2_flag = f; _}) -> f
 		in
 
 		if copy_stuff then (
@@ -1376,7 +1372,7 @@ let do_queue recompress_obj state file_state (in_obj : Mp3read.mp3read_ptr_2) ou
 			let F2_ext f2 = List2.take_first q2 in
 			p [Str "  "; Int f2.f2_num; Str ": "; Int (Ptr.Ref.length f2.f2_data); Str "+"; Int f2.f2_pad; Str " bytes in "; Int f2.f2_bitrate.bitrate_data; Str " byte frame with reservoir "; Int f2.f2_offset; Str " ("; Int f2.f2_bytes_left; Str " bytes left)"];(*"%d: %d+%d bytes in %d byte frame with reservoir %d (%d bytes left)\n" f2.f2_num (Ptr.Ref.length f2.f2_data) f2.f2_pad f2.f2_bitrate.bitrate_data f2.f2_offset f2.f2_bytes_left;*)
 
-			let (bytes_seen, read_from_pos) = List2.fold (fun (bytes_seen, read_from_pos) f3 ->
+			let (_, read_from_pos) = List2.fold (fun (bytes_seen, read_from_pos) f3 ->
 				p [Str "   Writing to frame "; Int f3.f3_num];
 				let write_to_pos = !q3_bytes_ref - bytes_seen - f2.f2_offset + read_from_pos in
 				p [Str "    Start writing byte "; Int read_from_pos; Str " to byte "; Int write_to_pos];
@@ -1555,7 +1551,7 @@ let do_queue recompress_obj state file_state (in_obj : Mp3read.mp3read_ptr_2) ou
 *)
 	(* See whether the input info matches the actual info *)
 	(match in_xing_option with
-		| Some {xingNumFrames = Some xing_frames} when xing_frames <> total_frames -> (
+		| Some {xingNumFrames = Some xing_frames; _} when xing_frames <> total_frames -> (
 (*			printf "\rWARNING: actual number of frames (%d) does not match the input info (%d)\n" total_frames xing_frames*)
 			P.print_always [Str "WARNING: Actual number of frames ("; Int total_frames; Str ") does not match the input info ("; Int xing_frames; Str ")"];
 		)
@@ -1729,12 +1725,12 @@ let do_queue recompress_obj state file_state (in_obj : Mp3read.mp3read_ptr_2) ou
 	p [Str "  "; Ptrref xing];
 	if debug_queue then (match (output_is_lame, in_xing_option) with
 		| (false, None) ->   p [Str "  None -> XING"];
-		| (false, Some x) -> p [Str "  XING -> XING"];
+		| (false, Some _) -> p [Str "  XING -> XING"];
 		| (true, None) ->    p [Str "  None -> LAME (???)"];
 		| (true, Some x) -> (
 			match x.xingLame with
 			| None ->   p [Str "  XING -> LAME (???)"];
-			| Some l -> p [Str "  LAME -> LAME"];
+			| Some _ -> p [Str "  LAME -> LAME"];
 		)
 	);
 	out_obj#seek xing_pos;

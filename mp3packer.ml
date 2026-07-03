@@ -16,7 +16,7 @@
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 *******************************************************************************)
 
-open Mp3read;;
+
 open Mp3queue;;
 open Mp3info;;
 
@@ -258,7 +258,7 @@ let queue_state = {
 (* Now see what the user wants *)
 let do_base = if !only_info_ref || !only_info_bitrate_ref then (
 	(* In order to generalize the do_base function, just ignore the second (output) string if user only wants info *)
-	fun a b -> (
+	fun a _ -> (
 		(try
 			
 			let errors = do_info ~only_bitrate:!only_info_bitrate_ref queue_state.q_print_in ~debug_info:(!debug_out_ref) a in
@@ -428,28 +428,28 @@ let do_a_dir append_extension din1 dout1 =
 
 if !debug_in_ref || !debug_out_ref then (
 	match (!in_name_ref, !out_name_ref, !only_info_ref) with
-	| (Some (IO_File x), Some (IO_File y), false) -> Printf.printf "mp3 mp3 N\n"
-	| (Some (IO_File x), Some (IO_Dir  y), false) -> Printf.printf "mp3 DIR N\n"
-	| (Some (IO_File x), None            , false) -> Printf.printf "mp3  .  N\n"
-	| (Some (IO_Dir  x), Some (IO_File y), false) -> Printf.printf "DIR mp3 N\n"
-	| (Some (IO_Dir  x), Some (IO_Dir  y), false) -> Printf.printf "DIR DIR N\n"
-	| (Some (IO_Dir  x), None            , false) -> Printf.printf "DIR  .  N\n"
-	| (None            , Some (IO_File y), false) -> Printf.printf " .  mp3 N\n"
-	| (None            , Some (IO_Dir  y), false) -> Printf.printf " .  DIR N\n"
+	| (Some (IO_File _), Some (IO_File _), false) -> Printf.printf "mp3 mp3 N\n"
+	| (Some (IO_File _), Some (IO_Dir  _), false) -> Printf.printf "mp3 DIR N\n"
+	| (Some (IO_File _), None            , false) -> Printf.printf "mp3  .  N\n"
+	| (Some (IO_Dir  _), Some (IO_File _), false) -> Printf.printf "DIR mp3 N\n"
+	| (Some (IO_Dir  _), Some (IO_Dir  _), false) -> Printf.printf "DIR DIR N\n"
+	| (Some (IO_Dir  _), None            , false) -> Printf.printf "DIR  .  N\n"
+	| (None            , Some (IO_File _), false) -> Printf.printf " .  mp3 N\n"
+	| (None            , Some (IO_Dir  _), false) -> Printf.printf " .  DIR N\n"
 	| (None            , None            , false) -> Printf.printf " .   .  N\n"
-	| (Some (IO_File x),         _       , true ) -> Printf.printf "mp3 ??? Y\n"
-	| (Some (IO_Dir  x),         _       , true ) -> Printf.printf "DIR ??? Y\n"
+	| (Some (IO_File _),         _       , true ) -> Printf.printf "mp3 ??? Y\n"
+	| (Some (IO_Dir  _),         _       , true ) -> Printf.printf "DIR ??? Y\n"
 	| (None            ,         _       , true ) -> Printf.printf " .  ??? Y\n"
 );;
 (match (!in_name_ref, !out_name_ref, !only_info_ref) with
 	| (Some (IO_File x), Some (IO_File y), false) -> ignore (do_a_file x y)
 	| (Some (IO_File x), Some (IO_Dir  y), false) -> ignore (do_a_file x (Filename.concat (y) (Filename.basename x)))
 	| (Some (IO_File x), None            , false) -> ignore (do_a_file x (append_before_extension x !append_ref))
-	| (Some (IO_Dir  x), Some (IO_File y), false) -> (failwith "Can't output a directory to a file")
+	| (Some (IO_Dir  _), Some (IO_File _), false) -> (failwith "Can't output a directory to a file")
 	| (Some (IO_Dir  x), Some (IO_Dir  y), false) -> (do_a_dir "" x y)
 	| (Some (IO_Dir  x), None            , false) -> (do_a_dir !append_ref x x)
-	| (None            , Some (IO_File y), false) -> (failwith "This REALLY shouldn't happen... (1)")
-	| (None            , Some (IO_Dir  y), false) -> (failwith "This REALLY shouldn't happen... (2)")
+	| (None            , Some (IO_File _), false) -> (failwith "This REALLY shouldn't happen... (1)")
+	| (None            , Some (IO_Dir  _), false) -> (failwith "This REALLY shouldn't happen... (2)")
 	| (None            , None            , false) -> (Arg.usage args ("ERROR: No input given\n" ^ usage_head))
 	| (Some (IO_File x),         _       , true ) -> ignore (do_a_file x "")
 	| (Some (IO_Dir  x),         _       , true ) -> (do_a_dir "" x "")

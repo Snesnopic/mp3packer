@@ -18,8 +18,7 @@
 
 (* Huffman tables! *)
 
-open Types;;
-open Pack;;
+
 
 (* get_huffman ht_num int_for_processing start_left_shift *)
 external get_huffman_c : int -> int -> int -> int = "mfh_get_huffman" [@@noalloc];;
@@ -1923,7 +1922,7 @@ let make_1bit_huffman_encode_table ht =
 
 (*let global_ht_encode = Array.map (fun x -> make_huffman_encode_table x) [| ht0; ht1; ht2; ht3; (**)ht0; ht5; ht6; ht7; ht8; ht9; ht10; ht11; ht12; ht13; (**)ht0; ht15; ht16; ht17; ht18; ht19; ht20; ht21; ht22; ht23; ht24; ht25; ht26; ht27; ht28; ht29; ht30; ht31 |];;*)
 (*let global_ht_encode_count1 = Array.map (fun x -> make_huffman_encode_table x) [| htA; htB |];;*)
-let global_ht_encode = Array.map (fun x -> make_4bit_huffman_encode_table x) [| ht0; ht1; ht2; ht3; (**)htX; ht5; ht6; ht7; ht8; ht9; ht10; ht11; ht12; ht13; (**)htX; ht15; ht16; ht17; ht18; ht19; ht20; ht21; ht22; ht23; ht24; ht25; ht26; ht27; ht28; ht29; ht30; ht31 |];;
+let global_ht_encode = Array.map (fun x -> make_4bit_huffman_encode_table x) [| ht0; ht1; ht2; ht3; htX; ht5; ht6; ht7; ht8; ht9; ht10; ht11; ht12; ht13; htX; ht15; ht16; ht17; ht18; ht19; ht20; ht21; ht22; ht23; ht24; ht25; ht26; ht27; ht28; ht29; ht30; ht31 |];;
 let global_ht_encode_count1 = Array.map (fun x -> make_1bit_huffman_encode_table x) [| htA; htB |];;
 
 

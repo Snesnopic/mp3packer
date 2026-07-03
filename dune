@@ -31,7 +31,7 @@
   (flags :standard (:include flags.sexp))
  )
  
- (flags (:standard -w -9-33-35-50-8-27-21)))
+ (flags (:standard -warn-error -a)))
 
 (rule
  (targets flags.sexp)

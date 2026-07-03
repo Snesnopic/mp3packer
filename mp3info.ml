@@ -88,7 +88,7 @@ let do_info ?(only_bitrate=false) p ?(debug_info=false) in_name =
 	
 	(* OUTPUT DATA INITIALIZATION *)
 	let bQ = Expandarray.create (match in_xing_option with
-		| Some {xingNumFrames = Some y} -> y + 2
+		| Some {xingNumFrames = Some y; _} -> y + 2
 		| _ -> (in_obj#length / 418) (* Assume 128kbps *)
 	) in (* Bitrate queue *)
 	let bH = Hashtbl.create 28 in (* Frame bitrate hashtable *)
@@ -117,10 +117,10 @@ let do_info ?(only_bitrate=false) p ?(debug_info=false) in_name =
 			);
 			let side = side_info_of_if_2 f in
 			let get_side_data_bits : type id chan. (id,chan) side_t -> int = function
-				| {side_bits = Bits_1_mono (a,b)} -> a + b
-				| {side_bits = Bits_1_stereo (a,b,c,d)} -> a + b + c + d
-				| {side_bits = Bits_2_mono a} -> a
-				| {side_bits = Bits_2_stereo (a,b)} -> a + b
+				| {side_bits = Bits_1_mono (a,b); _} -> a + b
+				| {side_bits = Bits_1_stereo (a,b,c,d); _} -> a + b + c + d
+				| {side_bits = Bits_2_mono a; _} -> a
+				| {side_bits = Bits_2_stereo (a,b); _} -> a + b
 			in
 			let side_data_bits = get_side_data_bits side in
 			total_frame_size_ref += f.if_header.header_bitrate.bitrate_size; (*!frame_ref.frameHeader.headerFrameLength;*)

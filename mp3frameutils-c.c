@@ -10,7 +10,9 @@
 
 
 #if defined(__WIN32__) || defined(WIN32) || defined(_WIN32)
+#ifndef WIN32
 #define WIN32
+#endif
 #endif
 
 
@@ -106,7 +108,7 @@ CAMLprim value mfu_find_best_config_base(
 	// These are indexed by the *length* of the regions, in bands
 	struct table_and_bits_t big1_bits[MAX_BANDS + 1]; // Don't really need all of this...
 	struct table_and_bits_higher_t big12_bits[MAX_BANDS + 1]; // or this...
-	struct table_and_bits_higher_t big123_bits[MAX_BANDS + 1]; // ...
+
 
 	int working_bits[MAX_BANDS][NUM_BIG_TABLES];
 
@@ -566,7 +568,7 @@ CAMLprim value mfu_find_best_config_base(
 
 
 // Only use for Windows -- I don't really want to debug this too much
-#ifdef WIN32
+#if 0
 
 #include <emmintrin.h>
 #include <smmintrin.h>

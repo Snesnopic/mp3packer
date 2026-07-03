@@ -15,7 +15,6 @@
 	along with mp3packer; if not, write to the Free Software
 	Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 *******************************************************************************)
-open Bytes
 
 (* Unicode argv *)
 let argv = match Unicode.argv_opt with
